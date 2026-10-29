@@ -2,7 +2,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { defineConfig, loadEnv } from "vite";
-import { pageManualChunks } from "./vite-manual-chunks";
+import { pageManualChunks } from "./vite-manual-chunks.ts";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "VITE_");
@@ -16,12 +16,17 @@ export default defineConfig(({ mode }) => {
     development: "VITE_DEV_URL",
   } as const;
 
-  const activeMode = (env.VITE_MODE || "dev").toLowerCase() as keyof typeof REQUIRED;
+  const activeMode = (
+    env.VITE_MODE ||
+    process.env.VITE_MODE ||
+    mode ||
+    "dev"
+  ).toLowerCase() as keyof typeof REQUIRED;
   const requiredKey = REQUIRED[activeMode];
 
-  if (requiredKey && !env[requiredKey]) {
-    throw new Error(
-      `[Elpima build] VITE_MODE="${activeMode}" requires ${requiredKey} to be set.`,
+  if (requiredKey && !env[requiredKey] && !process.env[requiredKey]) {
+    console.warn(
+      `[Elpima build] ${requiredKey} is not set for VITE_MODE="${activeMode}". Falling back to default API URL.`,
     );
   }
 
@@ -39,7 +44,7 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        "@": path.resolve(__dirname, "./src"),
+        "@": path.resolve(import.meta.dirname, "./src"),
       },
     },
     server: {
