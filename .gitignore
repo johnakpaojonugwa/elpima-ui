@@ -1,0 +1,17 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+test.js
+repomix-output.md
+.tmp/
+.prettierignore
+.prettier.json
+.AGENTS.md
+AGENTS.md
+agent.md
+.agents/
