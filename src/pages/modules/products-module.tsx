@@ -141,7 +141,7 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
   ]);
 
   const products = productsRes?.items ?? [];
-  const meta = productsRes?.meta;
+  const meta = productsRes?.pagination;
 
   const statsSummary = useMemo(() => {
     const total = meta?.total ?? products.length;
@@ -859,11 +859,11 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
         </div>
 
         {/* Pagination Footer */}
-        {meta && meta.totalPages > 1 && (
+        {meta && (meta.totalPages ?? meta.pages ?? 1) > 1 && (
           <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-100 bg-gray-50/40 text-xs">
             <span className="text-gray-500">
               Page <strong>{meta.page}</strong> of{" "}
-              <strong>{meta.totalPages}</strong>
+              <strong>{meta.totalPages ?? meta.pages}</strong>
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -876,7 +876,7 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
               </button>
               <button
                 type="button"
-                disabled={page >= meta.totalPages}
+                disabled={page >= (meta.totalPages ?? meta.pages ?? 1)}
                 onClick={() => setPage((p) => p + 1)}
                 className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 font-semibold disabled:opacity-40 hover:bg-gray-50 cursor-pointer"
               >

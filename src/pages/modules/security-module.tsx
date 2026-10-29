@@ -7,7 +7,6 @@ import {
   LogOut,
   QrCode,
   RefreshCw,
-  ShieldAlert,
   ShieldCheck,
   Smartphone,
   Trash2,

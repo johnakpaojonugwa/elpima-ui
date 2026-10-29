@@ -41,7 +41,7 @@ export const AuditLogsModule: React.FC = () => {
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
   const rawLogs = auditRes?.items ?? [];
-  const meta = auditRes?.meta;
+  const meta = auditRes?.pagination;
 
   const filteredLogs = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -310,11 +310,11 @@ export const AuditLogsModule: React.FC = () => {
         </div>
 
         {/* Pagination */}
-        {meta && meta.totalPages > 1 && (
+        {meta && (meta.totalPages ?? meta.pages ?? 1) > 1 && (
           <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-100 bg-gray-50/40 text-xs">
             <span className="text-gray-500">
               Page <strong>{meta.page}</strong> of{" "}
-              <strong>{meta.totalPages}</strong> ({meta.total} total events)
+              <strong>{meta.totalPages ?? meta.pages}</strong> ({meta.total} total events)
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -327,7 +327,7 @@ export const AuditLogsModule: React.FC = () => {
               </button>
               <button
                 type="button"
-                disabled={page >= meta.totalPages}
+                disabled={page >= (meta.totalPages ?? meta.pages ?? 1)}
                 onClick={() => setPage((p) => p + 1)}
                 className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white font-semibold disabled:opacity-40"
               >

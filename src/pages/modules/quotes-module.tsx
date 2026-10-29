@@ -114,7 +114,7 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
   const [createError, setCreateError] = useState("");
 
   const rawQuotes = quotesRes?.items ?? [];
-  const meta = quotesRes?.meta;
+  const meta = quotesRes?.pagination;
   const availableProducts = productsRes?.items ?? [];
 
   const sortedQuotes = useMemo(() => {
@@ -672,11 +672,11 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
         </div>
 
         {/* Pagination */}
-        {meta && meta.totalPages > 1 && (
+        {meta && (meta.totalPages ?? meta.pages ?? 1) > 1 && (
           <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-100 bg-gray-50/40 text-xs">
             <span className="text-gray-500">
               Page <strong>{meta.page}</strong> of{" "}
-              <strong>{meta.totalPages}</strong>
+              <strong>{meta.totalPages ?? meta.pages}</strong>
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -689,7 +689,7 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
               </button>
               <button
                 type="button"
-                disabled={page >= meta.totalPages}
+                disabled={page >= (meta.totalPages ?? meta.pages ?? 1)}
                 onClick={() => setPage((p) => p + 1)}
                 className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white font-semibold disabled:opacity-40"
               >
