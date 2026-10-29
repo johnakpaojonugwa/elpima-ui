@@ -15,10 +15,12 @@ import {
   RefreshCw,
   Search,
   SlidersHorizontal,
+  Sparkles,
   Star,
   Stethoscope,
   TrendingUp,
   Trash2,
+  Wand2,
   X,
 } from "lucide-react";
 import {
@@ -39,6 +41,13 @@ import type {
   ProductSortOption,
 } from "@/types/domain";
 import { formatLiveDate } from "@/utils/date";
+import {
+  deriveCategoryCodePrefix,
+  generateClinicalSku,
+  getDefaultSpecsForCategorySlug,
+  HAS_PRODUCT_BLUEPRINTS,
+  slugifyText,
+} from "@/constants/clinical-taxonomy";
 
 const COMPLIANCE_PRESETS = [
   "ISO 13485",
@@ -141,43 +150,127 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
     return { total, inStockCount, featuredCount };
   }, [products, meta]);
 
+  const [selectedBlueprintSku, setSelectedBlueprintSku] = useState("");
+
+  const resolveCategoryCodeById = (catId: string): string => {
+    const cat = categories.find((c) => c.id === catId);
+    if (!cat) return "END";
+    return deriveCategoryCodePrefix(
+      cat.name,
+      cat.slug,
+      cat.description ?? undefined,
+    );
+  };
+
   const openCreateModal = () => {
+    const initialCat = categories[0];
+    const initialCatCode = initialCat
+      ? deriveCategoryCodePrefix(
+          initialCat.name,
+          initialCat.slug,
+          initialCat.description ?? undefined,
+        )
+      : "END";
+    const nextModelSeq = (meta?.total ?? products.length) + 1;
+
     setEditingProduct(null);
+    setSelectedBlueprintSku("");
     setFormError("");
     setName("");
-    setSku(`ELP-SURG-${Math.floor(1000 + Math.random() * 9000)}`);
+    setSku(generateClinicalSku(initialCatCode, "Surgical Stapler", nextModelSeq));
     setSlug("");
-    setCategoryId(categories[0]?.id ?? "");
+    setCategoryId(initialCat?.id ?? "");
     setSpecialtyId(specialties[0]?.id ?? "");
     setShortDescription("");
     setDescription("");
     setLeadTime("In Stock — Dispatched within 24 hours");
-    setMinOrderQuantity(1);
+    setMinOrderQuantity(5);
     setInStock(true);
     setIsFeatured(false);
     setIsActive(true);
-    setCompliance(["ISO 13485", "CE Mark"]);
+    setCompliance(["ISO 13485", "CE Mark", "NAFDAC Approved"]);
     setImageUrls([
       "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80",
     ]);
-    setSpecRows([
-      { key: "Material", value: "Medical Grade Stainless Steel" },
-      { key: "Sterilization", value: "Steam Autoclavable (134°C)" },
-    ]);
+    setSpecRows(getDefaultSpecsForCategorySlug(initialCat?.slug));
     setIsFormOpen(true);
+  };
+
+  const handleNameChange = (nextName: string) => {
+    setName(nextName);
+    if (!editingProduct) {
+      setSlug(slugifyText(nextName));
+      const catCode = resolveCategoryCodeById(categoryId);
+      const nextModelSeq = (meta?.total ?? products.length) + 1;
+      setSku(generateClinicalSku(catCode, nextName, nextModelSeq));
+    }
+  };
+
+  const handleCategoryChange = (nextCatId: string) => {
+    setCategoryId(nextCatId);
+    const cat = categories.find((c) => c.id === nextCatId);
+    const catCode = resolveCategoryCodeById(nextCatId);
+    if (!editingProduct) {
+      const nextModelSeq = (meta?.total ?? products.length) + 1;
+      setSku(generateClinicalSku(catCode, name || "Surgical Stapler", nextModelSeq));
+      if (!selectedBlueprintSku && cat?.slug) {
+        setSpecRows(getDefaultSpecsForCategorySlug(cat.slug, name));
+      }
+    }
+  };
+
+  const handleRegenerateSku = () => {
+    const catCode = resolveCategoryCodeById(categoryId);
+    const nextModelSeq = (meta?.total ?? products.length) + 1;
+    setSku(generateClinicalSku(catCode, name || "Surgical Stapler", nextModelSeq));
+  };
+
+  const handleLoadCategorySpecs = () => {
+    const cat = categories.find((c) => c.id === categoryId);
+    setSpecRows(getDefaultSpecsForCategorySlug(cat?.slug, name));
+  };
+
+  const handleApplyBlueprint = (blueprintSku: string) => {
+    setSelectedBlueprintSku(blueprintSku);
+    const bp = HAS_PRODUCT_BLUEPRINTS.find((item) => item.sku === blueprintSku);
+    if (!bp) return;
+
+    const matchedCat = categories.find((c) => c.slug === bp.categorySlug);
+    const matchedSpec = specialties.find((s) => s.slug === bp.specialtySlug);
+
+    setName(bp.name);
+    setSku(bp.sku);
+    setSlug(bp.slug);
+    if (matchedCat) setCategoryId(matchedCat.id);
+    if (matchedSpec) setSpecialtyId(matchedSpec.id);
+    setShortDescription(bp.shortDescription);
+    setDescription(bp.description);
+    setLeadTime(bp.leadTime);
+    setMinOrderQuantity(bp.minOrderQuantity);
+    setInStock(true);
+    setIsFeatured(bp.isFeatured);
+    setIsActive(true);
+    setCompliance(bp.compliance);
+    setSpecRows(
+      Object.entries(bp.specifications).map(([key, value]) => ({
+        key,
+        value,
+      })),
+    );
   };
 
   const openEditModal = (product: Product) => {
     setEditingProduct(product);
+    setSelectedBlueprintSku("");
     setFormError("");
     setName(product.name);
     setSku(product.sku ?? "");
     setSlug(product.slug ?? "");
-    setCategoryId(product.categoryId);
-    setSpecialtyId(product.specialtyId ?? "");
+    setCategoryId(product.categoryId || product.category?.id || "");
+    setSpecialtyId(product.specialtyId || product.specialty?.id || "");
     setShortDescription(product.shortDescription ?? "");
     setDescription(product.description ?? product.fullDescription ?? "");
-    setLeadTime(product.leadTime ?? "In Stock");
+    setLeadTime(product.leadTime ?? "In Stock — Dispatched within 24 hours");
     setMinOrderQuantity(product.minOrderQuantity ?? 1);
     setInStock(product.inStock);
     setIsFeatured(product.isFeatured);
@@ -185,7 +278,7 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
     setCompliance(
       product.compliance?.length
         ? product.compliance
-        : (product.certifications ?? ["ISO 13485"]),
+        : (product.certifications ?? ["ISO 13485", "CE Mark", "NAFDAC Approved"]),
     );
     setImageUrls(
       product.images?.length
@@ -200,7 +293,9 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
       value: String(v ?? ""),
     }));
     setSpecRows(
-      entries.length > 0 ? entries : [{ key: "Material", value: "Titanium" }],
+      entries.length > 0
+        ? entries
+        : getDefaultSpecsForCategorySlug(product.category?.slug, product.name),
     );
     setIsFormOpen(true);
   };
@@ -826,6 +921,43 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                 </div>
               )}
 
+              {/* Quick-Fill HAS Medical Stapler Blueprint Selector */}
+              {!editingProduct && (
+                <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-100 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#2E7D5B]">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>
+                        HAS Medical Stapler Blueprint Template (16 Clinical Models)
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono font-semibold text-emerald-800 bg-white px-2 py-0.5 rounded-md border border-emerald-200">
+                      SKU Formula: ELP-[CAT]-[DEV]-[###]
+                    </span>
+                  </div>
+                  <FloatingSelect
+                    value={selectedBlueprintSku}
+                    onChange={(val) => handleApplyBlueprint(val)}
+                    menuTitle="Select HAS Medical Stapler Model Blueprint"
+                    placeholder="Choose one of the 16 HAS Medical Stapler models to auto-fill specs & SKU..."
+                    icon={<Wand2 className="w-3.5 h-3.5" />}
+                    isActiveFilter={Boolean(selectedBlueprintSku)}
+                    matchWidth
+                    className="w-full text-xs"
+                    options={[
+                      {
+                        value: "",
+                        label: "Custom Surgical Equipment (Manual Entry)",
+                      },
+                      ...HAS_PRODUCT_BLUEPRINTS.map((bp) => ({
+                        value: bp.sku,
+                        label: `${bp.sku} — ${bp.name} (${bp.modelRef})`,
+                      })),
+                    ]}
+                  />
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
                   <label className="block font-bold text-gray-700 mb-1">
@@ -834,35 +966,49 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   <input
                     type="text"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. HD Laparoscopic 30° Rigid Optical Telescope"
+                    onChange={(e) => handleNameChange(e.target.value)}
+                    placeholder="e.g. Disposable Endo Cutter Stapler"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2E7D5B]"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">
-                    SKU CODE
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-bold text-gray-700">
+                      CLINICAL SKU CODE *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleRegenerateSku}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#2E7D5B] hover:underline cursor-pointer"
+                      title="Generate ELP-[CAT]-[DEV]-[###] SKU from Category & Name"
+                    >
+                      <Wand2 className="w-3 h-3" />
+                      <span>Auto-Generate SKU</span>
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={sku}
-                    onChange={(e) => setSku(e.target.value)}
-                    placeholder="ELP-LAP-TEL-3010"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 font-mono focus:outline-none focus:border-[#2E7D5B]"
+                    onChange={(e) => setSku(e.target.value.toUpperCase())}
+                    placeholder="ELP-END-ECS-002"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 font-mono font-bold text-[#2E7D5B] focus:outline-none focus:border-[#2E7D5B]"
                   />
+                  <p className="text-[10px] text-gray-400 mt-1 font-mono">
+                    Standard: ELP-[END|OPN|SPC|CLS|LAP]-[3-Letter Device]-[Model #]
+                  </p>
                 </div>
 
                 <div>
                   <label className="block font-bold text-gray-700 mb-1">
-                    URL SLUG (Auto-generated if blank)
+                    URL SLUG (Auto-generated from Name)
                   </label>
                   <input
                     type="text"
                     value={slug}
                     onChange={(e) => setSlug(e.target.value)}
-                    placeholder="hd-laparoscopic-30-optical-telescope"
+                    placeholder="disposable-endo-cutter-stapler"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 font-mono focus:outline-none focus:border-[#2E7D5B]"
                   />
                 </div>
@@ -873,16 +1019,23 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   </label>
                   <FloatingSelect
                     value={categoryId}
-                    onChange={(val) => setCategoryId(val)}
+                    onChange={(val) => handleCategoryChange(val)}
                     placeholder="Select Category"
                     matchWidth
                     className="w-full text-xs"
                     options={[
                       { value: "", label: "Select Category" },
-                      ...categories.map((cat) => ({
-                        value: cat.id,
-                        label: cat.name,
-                      })),
+                      ...categories.map((cat) => {
+                        const prefix = deriveCategoryCodePrefix(
+                          cat.name,
+                          cat.slug,
+                          cat.description ?? undefined,
+                        );
+                        return {
+                          value: cat.id,
+                          label: `[${prefix}] ${cat.name}`,
+                        };
+                      }),
                     ]}
                   />
                 </div>
@@ -1062,19 +1215,35 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
 
               {/* Technical Specifications Key-Value Builder */}
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="font-bold text-gray-700">
-                    TECHNICAL SPECIFICATIONS (JSON)
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSpecRows((prev) => [...prev, { key: "", value: "" }])
-                    }
-                    className="text-[#2E7D5B] font-bold hover:underline"
-                  >
-                    + Add Specification Row
-                  </button>
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <div>
+                    <label className="font-bold text-gray-700">
+                      TECHNICAL SPECIFICATIONS (HAS CLINICAL FORMAT)
+                    </label>
+                    <p className="text-[10px] text-gray-400">
+                      Standard parameters: Model Reference, Sizes/Lengths, Staple Rows/Heights, Material & EO Sterilization
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleLoadCategorySpecs}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-[#2E7D5B] font-bold hover:bg-emerald-100 cursor-pointer"
+                      title="Load the default clinical specification parameters for the selected category"
+                    >
+                      <Wand2 className="w-3 h-3" />
+                      <span>Load Category Spec Schema</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSpecRows((prev) => [...prev, { key: "", value: "" }])
+                      }
+                      className="text-[#2E7D5B] font-bold hover:underline cursor-pointer"
+                    >
+                      + Add Specification Row
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   {specRows.map((row, idx) => (

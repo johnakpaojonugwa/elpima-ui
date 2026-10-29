@@ -10,6 +10,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Sparkles,
   Stethoscope,
   Trash2,
   X,
@@ -24,6 +25,10 @@ import { useAuthStore } from "@/store";
 import { FloatingSelect } from "@/components/app";
 import type { Specialty } from "@/types/domain";
 import { formatLiveDate } from "@/utils/date";
+import {
+  CLINICAL_SPECIALTY_PRESETS,
+  slugifyText,
+} from "@/constants/clinical-taxonomy";
 
 interface SpecialtiesModuleProps {
   onToast?: (message: string) => void;
@@ -358,6 +363,35 @@ export const SpecialtiesModule: React.FC<SpecialtiesModuleProps> = ({
                 </div>
               )}
 
+              {!editingSpecialty && (
+                <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-100 space-y-2">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#2E7D5B]">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Quick-Fill Clinical Specialty Blueprint:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {CLINICAL_SPECIALTY_PRESETS.map((preset) => (
+                      <button
+                        key={preset.slug}
+                        type="button"
+                        onClick={() => {
+                          setName(preset.name);
+                          setSlug(preset.slug);
+                          setDescription(preset.description);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition cursor-pointer ${
+                          slug === preset.slug
+                            ? "bg-[#2E7D5B] text-white border-[#2E7D5B]"
+                            : "bg-white text-gray-700 border-gray-200 hover:border-[#2E7D5B]"
+                        }`}
+                      >
+                        {preset.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block font-bold text-gray-700 mb-1">
                   SPECIALTY NAME *
@@ -365,8 +399,14 @@ export const SpecialtiesModule: React.FC<SpecialtiesModuleProps> = ({
                 <input
                   type="text"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Cardiothoracic & Vascular Surgery"
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setName(next);
+                    if (!editingSpecialty) {
+                      setSlug(slugifyText(next));
+                    }
+                  }}
+                  placeholder="e.g. Gastrointestinal & Colorectal Surgery"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200"
                   required
                 />
