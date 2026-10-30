@@ -134,6 +134,10 @@ export const SuperAdminNotificationsModal: React.FC<
   const yesterdayItems = filteredNotifications.filter(
     (notificationItem) => notificationItem.day === "Yesterday",
   );
+  const earlierItems = filteredNotifications.filter(
+    (notificationItem) =>
+      notificationItem.day !== "Today" && notificationItem.day !== "Yesterday",
+  );
 
   const renderIcon = (type: NotificationItem["iconType"]) => {
     switch (type) {
@@ -333,6 +337,47 @@ export const SuperAdminNotificationsModal: React.FC<
 
                       <div className="space-y-2.5">
                         {yesterdayItems.map((item) => (
+                          <div
+                            key={item.id}
+                            onClick={() => onToggleRead?.(item.id)}
+                            className="flex items-start justify-between gap-3 p-2 -mx-2 rounded-2xl hover:bg-stone-50/90 transition cursor-pointer select-none group"
+                          >
+                            <div className="flex items-start gap-3.5 min-w-0">
+                              {renderIcon(item.iconType)}
+                              <div className="space-y-0.5 min-w-0 pt-0.5">
+                                <h4 className="text-xs sm:text-sm font-bold text-[#111827] group-hover:text-[#2E7D5B] transition-colors leading-tight">
+                                  {item.title}
+                                </h4>
+                                <p className="text-[11px] sm:text-xs text-stone-500 font-normal leading-relaxed line-clamp-2">
+                                  {item.description}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col items-end justify-between self-stretch shrink-0 pt-0.5">
+                              {!item.isRead ? (
+                                <span className="w-2 h-2 rounded-full bg-[#ef4444]" />
+                              ) : (
+                                <span className="w-2 h-2" />
+                              )}
+                              <span className="text-[11px] text-stone-400 font-normal">
+                                {item.timestamp}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {earlierItems.length > 0 && (
+                    <div className="space-y-3.5 pt-4">
+                      <h3 className="text-xs sm:text-sm font-bold text-stone-900 tracking-tight select-none">
+                        Earlier
+                      </h3>
+
+                      <div className="space-y-2.5">
+                        {earlierItems.map((item) => (
                           <div
                             key={item.id}
                             onClick={() => onToggleRead?.(item.id)}

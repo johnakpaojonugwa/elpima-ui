@@ -14,10 +14,8 @@ import { useAuthStore } from "@/store";
 import { useSuperAdminProfile } from "@/hooks/use-super-admin-profile";
 import { CONTROL_ADMIN_NAV_ITEMS } from "../dashboard/constants";
 import type { ControlAdminNavItem, ControlAdminRole } from "../dashboard/types";
-import {
-  SuperAdminNotificationsModal,
-  INITIAL_SUPER_ADMIN_NOTIFICATIONS,
-} from "@/pages/super-admin/components/super-admin-notifications-modal";
+import { useNotifications } from "@/hooks/use-notifications";
+import { SuperAdminNotificationsModal } from "@/pages/super-admin/components/super-admin-notifications-modal";
 
 interface ControlAdminHeaderProps {
   onToggleMobileSidebar: () => void;
@@ -41,32 +39,12 @@ export const ControlAdminHeader: React.FC<ControlAdminHeaderProps> = ({
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState(
-    INITIAL_SUPER_ADMIN_NOTIFICATIONS,
-  );
-
-  const unreadCount = notifications.filter(
-    (notificationItem) => !notificationItem.isRead,
-  ).length;
-
-  const handleMarkAllAsRead = () => {
-    setNotifications((previousNotifications) =>
-      previousNotifications.map((notificationItem) => ({
-        ...notificationItem,
-        isRead: true,
-      })),
-    );
-  };
-
-  const handleToggleRead = (id: string) => {
-    setNotifications((previousNotifications) =>
-      previousNotifications.map((notificationItem) =>
-        notificationItem.id === id
-          ? { ...notificationItem, isRead: !notificationItem.isRead }
-          : notificationItem,
-      ),
-    );
-  };
+  const {
+    notifications,
+    unreadCount,
+    markAllAsRead: handleMarkAllAsRead,
+    toggleRead: handleToggleRead,
+  } = useNotifications();
 
   const dateLabel =
     currentDateLabel ??

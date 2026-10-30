@@ -1,5 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AppRouter from "@/routes";
+import { ToastContainer } from "@/components/app/toast-container";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -9,11 +11,14 @@ const queryClient = new QueryClient({
     },
   },
 });
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppRouter />
+      <ToastContainer />
     </QueryClientProvider>
   );
 }
+
 export default App;

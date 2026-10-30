@@ -21,12 +21,10 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/store";
 import { useSuperAdminProfile } from "@/hooks/use-super-admin-profile";
+import { useNotifications } from "@/hooks/use-notifications";
 import { SUPER_ADMIN_NAV_ITEMS } from "../dashboard/constants";
 import type { SuperAdminNavItem } from "../dashboard/types";
-import {
-  SuperAdminNotificationsModal,
-  INITIAL_SUPER_ADMIN_NOTIFICATIONS,
-} from "./super-admin-notifications-modal";
+import { SuperAdminNotificationsModal } from "./super-admin-notifications-modal";
 
 const NAV_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutGrid,
@@ -72,32 +70,12 @@ export const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({
   };
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState(
-    INITIAL_SUPER_ADMIN_NOTIFICATIONS,
-  );
-
-  const unreadCount = notifications.filter(
-    (notificationItem) => !notificationItem.isRead,
-  ).length;
-
-  const handleMarkAllAsRead = () => {
-    setNotifications((previousNotifications) =>
-      previousNotifications.map((notificationItem) => ({
-        ...notificationItem,
-        isRead: true,
-      })),
-    );
-  };
-
-  const handleToggleRead = (id: string) => {
-    setNotifications((previousNotifications) =>
-      previousNotifications.map((notificationItem) =>
-        notificationItem.id === id
-          ? { ...notificationItem, isRead: !notificationItem.isRead }
-          : notificationItem,
-      ),
-    );
-  };
+  const {
+    notifications,
+    unreadCount,
+    markAllAsRead: handleMarkAllAsRead,
+    toggleRead: handleToggleRead,
+  } = useNotifications();
 
   const dateLabel =
     currentDateLabel ??
