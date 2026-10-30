@@ -252,7 +252,7 @@ export const HomePage: React.FC = () => {
           </div>
           <div className="flex items-center justify-center overflow-hidden relative">
             <img
-              src="https://images.unsplash.com/photo-1583912267670-6575ad362e3b?q=80&w=800&auto=format&fit=crop"
+              src="https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?q=80&w=800&auto=format&fit=crop"
               alt="Titanium Surgical Instruments Set"
               className="h-full w-full object-cover"
             />

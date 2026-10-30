@@ -148,7 +148,7 @@ export const AboutPage: React.FC = () => {
 
         <div className="flex items-center justify-center overflow-hidden h-[60vh] md:h-[80vh] w-full">
           <img
-            src="https://images.unsplash.com/photo-1583912267670-6575ad362e3b?q=80&w=1800&auto=format&fit=crop"
+            src="https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?q=80&w=1800&auto=format&fit=crop"
             alt="Surgical Precision Instruments Array"
             className="w-full h-full object-cover"
           />
