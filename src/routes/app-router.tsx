@@ -21,8 +21,33 @@ export type PreloadableComponent<T extends React.ComponentType<any>> =
 export function lazyWithPreload<T extends React.ComponentType<any>>(
   factory: () => Promise<{ default: T }>,
 ): PreloadableComponent<T> {
-  const Component = React.lazy(factory) as PreloadableComponent<T>;
-  Component.preload = factory;
+  const safeFactory = async () => {
+    try {
+      return await factory();
+    } catch (importError: any) {
+      const isChunkError =
+        importError?.message?.includes(
+          "Failed to fetch dynamically imported module",
+        ) ||
+        importError?.message?.includes("Importing a module script failed") ||
+        importError?.name === "ChunkLoadError";
+
+      // If a new Vercel deployment invalidated previous chunk hashes, reload once to fetch new index.html
+      if (isChunkError && typeof window !== "undefined") {
+        const reloadKey = "elpima_chunk_reload_ts";
+        const lastReload = sessionStorage.getItem(reloadKey);
+        const now = Date.now();
+        if (!lastReload || now - Number(lastReload) > 12000) {
+          sessionStorage.setItem(reloadKey, String(now));
+          window.location.reload();
+        }
+      }
+      throw importError;
+    }
+  };
+
+  const Component = React.lazy(safeFactory) as PreloadableComponent<T>;
+  Component.preload = safeFactory;
   return Component;
 }
 

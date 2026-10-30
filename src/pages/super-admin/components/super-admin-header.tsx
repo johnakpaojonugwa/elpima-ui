@@ -157,7 +157,9 @@ export const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({
                     `/super-admin/quotes?reference=${encodeURIComponent(q)}`,
                   );
                 } else {
-                  navigate(`/super-admin/products`);
+                  navigate(
+                    `/super-admin/products?search=${encodeURIComponent(q)}`,
+                  );
                 }
               }}
               className="hidden md:flex items-center relative text-[#408561]"

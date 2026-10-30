@@ -145,7 +145,9 @@ export const ControlAdminHeader: React.FC<ControlAdminHeaderProps> = ({
                     `/admin/quotes?reference=${encodeURIComponent(q)}`,
                   );
                 } else {
-                  navigate(`/admin/products`);
+                  navigate(
+                    `/admin/products?search=${encodeURIComponent(q)}`,
+                  );
                 }
               }}
               className="hidden md:flex items-center relative text-[#408561]"

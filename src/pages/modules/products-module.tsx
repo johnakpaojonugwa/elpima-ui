@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   ArrowDownAZ,
   ArrowUpDown,
@@ -67,15 +68,27 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
   const userRole = useAuthStore((s) => s.user?.role) ?? "SUPERVISING_MANAGER";
   const isSuperAdmin = userRole === "SUPER_ADMIN";
 
+  const [searchParams] = useSearchParams();
+  const urlSearch = searchParams.get("search") || "";
+
   // Filters & Pagination state
   const [page, setPage] = useState(1);
   const [limit] = useState(12);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(urlSearch);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
   const [stockFilter, setStockFilter] = useState<"" | "true" | "false">("");
   const [featuredFilter, setFeaturedFilter] = useState<"" | "true">("");
   const [sort, setSort] = useState<ProductSortOption>("newest");
+
+  // Sync search state when URL search param changes (e.g. from top header search bar)
+  useEffect(() => {
+    const q = searchParams.get("search");
+    if (q !== null && q !== search) {
+      setSearch(q);
+      setPage(1);
+    }
+  }, [searchParams]);
 
   // Queries
   const {
@@ -303,6 +316,23 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp"];
+    if (!ALLOWED_MIME.includes(file.type)) {
+      setFormError(
+        `Invalid format for "${file.name}". Only JPEG, PNG, and WebP are allowed.`,
+      );
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+      setFormError(`"${file.name}" exceeds the 5MB size limit (${sizeMb}MB).`);
+      e.target.value = "";
+      return;
+    }
+
     try {
       const uploaded = await uploadImage.mutateAsync(file);
       if (uploaded?.url) {
@@ -315,6 +345,8 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
           err?.response?.data?.message ||
           "Image upload failed. Ensure file is JPEG/PNG/WebP under 5MB.",
       );
+    } finally {
+      e.target.value = "";
     }
   };
 
@@ -330,9 +362,19 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
       setFormError("Please select a surgical category.");
       return;
     }
-    const validImages = imageUrls.map((u) => u.trim()).filter(Boolean);
+    const validImages = imageUrls
+      .map((u) => u.trim())
+      .filter(
+        (u) =>
+          u &&
+          (u.startsWith("https://") ||
+            u.startsWith("/") ||
+            u.startsWith("http://localhost")),
+      );
     if (validImages.length === 0) {
-      setFormError("At least one valid product image URL is required.");
+      setFormError(
+        "At least one valid product image URL (starting with https://) is required.",
+      );
       return;
     }
 
