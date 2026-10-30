@@ -2,7 +2,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { FolderTree, Stethoscope } from "lucide-react";
-import { FloatingSelect } from "@/components/app";
+import { FloatingSelect, Pagination } from "@/components/app";
 import {
   useCategoriesQuery,
   useProductsQuery,
@@ -195,38 +195,13 @@ const CatalogPage: React.FC = () => {
             </div>
 
             {/* Pagination */}
-            {data.pagination && data.pagination.totalPages > 1 && (
-              <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6">
-                <span className="text-xs text-slate-500">
-                  Page <strong>{data.pagination.page}</strong> of{" "}
-                  <strong>{data.pagination.totalPages}</strong> (
-                  {data.pagination.total} total items)
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={data.pagination.page <= 1}
-                    onClick={() =>
-                      handlePageChange(data.pagination.page - 1)
-                    }
-                    className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition-colors cursor-pointer"
-                  >
-                    ← Previous
-                  </button>
-                  <button
-                    type="button"
-                    disabled={
-                      data.pagination.page >= data.pagination.totalPages
-                    }
-                    onClick={() =>
-                      handlePageChange(data.pagination.page + 1)
-                    }
-                    className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition-colors cursor-pointer"
-                  >
-                    Next →
-                  </button>
-                </div>
-              </div>
+            {Boolean(data.pagination && (data.pagination.totalPages ?? 1) > 1) && (
+              <Pagination
+                currentPage={data.pagination?.page ?? 1}
+                totalPages={data.pagination?.totalPages ?? 1}
+                onPageChange={handlePageChange}
+                className="mt-10 border-t border-slate-200 pt-6"
+              />
             )}
           </>
         )}

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowDownAZ,
   ArrowUpDown,
@@ -24,7 +24,7 @@ import {
   useUpdateCategoryMutation,
 } from "@/hooks/queries";
 import { useAuthStore } from "@/store";
-import { FloatingSelect } from "@/components/app";
+import { FloatingSelect, Pagination } from "@/components/app";
 import type { Category } from "@/types/domain";
 import { formatLiveDate } from "@/utils/date";
 import {
@@ -118,6 +118,23 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
         );
       });
   }, [categories, search, statusFilter, sortBy]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, sortBy]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredCategories.length / itemsPerPage),
+  );
+
+  const paginatedCategories = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredCategories.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredCategories, currentPage, itemsPerPage]);
 
   const openCreate = () => {
     setEditingCategory(null);
@@ -421,7 +438,7 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
                   </td>
                 </tr>
               ) : (
-                filteredCategories.map((categoryItem) => {
+                paginatedCategories.map((categoryItem) => {
                   const prefix = deriveCategoryCodePrefix(
                     categoryItem.name,
                     categoryItem.slug,
@@ -504,6 +521,18 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/40">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(targetPage) => setCurrentPage(targetPage)}
+              className="pt-0"
+            />
+          </div>
+        )}
       </div>
 
       {/* Create / Edit Modal */}

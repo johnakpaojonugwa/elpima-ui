@@ -35,19 +35,22 @@ export const ManagersOverviewTable: React.FC<ManagersOverviewTableProps> = ({
   );
 
   const displayedManagers = useMemo(() => {
-    const filtered = managers.filter((m) => {
-      if (statusFilter !== "all" && m.accountStatus !== statusFilter) {
+    const filtered = managers.filter((managerItem) => {
+      if (statusFilter !== "all" && managerItem.accountStatus !== statusFilter) {
         return false;
       }
       return true;
     });
 
     if (sortBy === "name_asc") {
-      return [...filtered].sort((a, b) => a.fullName.localeCompare(b.fullName));
+      return [...filtered].sort((firstManager, secondManager) =>
+        firstManager.fullName.localeCompare(secondManager.fullName)
+      );
     }
     if (sortBy === "quotes_desc") {
       return [...filtered].sort(
-        (a, b) => b.assignedQuotesCount - a.assignedQuotesCount
+        (firstManager, secondManager) =>
+          secondManager.assignedQuotesCount - firstManager.assignedQuotesCount
       );
     }
     return filtered;

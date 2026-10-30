@@ -27,7 +27,7 @@ import {
   useUpdateManagerStatusMutation,
 } from "@/hooks/queries";
 import type { Manager } from "@/types/domain";
-import { FloatingSelect } from "@/components/app";
+import { FloatingSelect, Pagination } from "@/components/app";
 import { formatLiveDate } from "@/utils/date";
 
 interface ManagersModuleProps {
@@ -67,12 +67,12 @@ export const ManagersModule: React.FC<ManagersModuleProps> = ({ onToast }) => {
   useEffect(() => {
     const idParam = searchParams.get("id");
     if (idParam && managers.length > 0 && !viewingManager) {
-      const matched = managers.find((m) => m.id === idParam);
+      const matched = managers.find((managerItem) => managerItem.id === idParam);
       if (matched) {
         setViewingManager(matched);
       }
     }
-  }, [searchParams, managers]);
+  }, [searchParams, managers, viewingManager]);
 
   // Form fields
   const [fullName, setFullName] = useState("");
@@ -81,35 +81,54 @@ export const ManagersModule: React.FC<ManagersModuleProps> = ({ onToast }) => {
   const [password, setPassword] = useState("");
 
   const filteredManagers = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const searchQuery = search.trim().toLowerCase();
     return managers
-      .filter((m) => {
-        if (statusFilter === "active" && !m.isActive) return false;
-        if (statusFilter === "suspended" && m.isActive) return false;
+      .filter((managerItem) => {
+        if (statusFilter === "active" && !managerItem.isActive) return false;
+        if (statusFilter === "suspended" && managerItem.isActive) return false;
         if (
-          q &&
-          !m.fullName.toLowerCase().includes(q) &&
-          !m.email.toLowerCase().includes(q) &&
-          !(m.phone ?? "").toLowerCase().includes(q)
+          searchQuery &&
+          !managerItem.fullName.toLowerCase().includes(searchQuery) &&
+          !managerItem.email.toLowerCase().includes(searchQuery) &&
+          !(managerItem.phone ?? "").toLowerCase().includes(searchQuery)
         ) {
           return false;
         }
         return true;
       })
-      .sort((a, b) => {
+      .sort((firstManager, secondManager) => {
         if (sortBy === "quotes_desc") {
           return (
-            (b._count?.assignedQuotes ?? 0) - (a._count?.assignedQuotes ?? 0)
+            (secondManager._count?.assignedQuotes ?? 0) -
+            (firstManager._count?.assignedQuotes ?? 0)
           );
         }
         if (sortBy === "newest") {
           return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            new Date(secondManager.createdAt).getTime() -
+            new Date(firstManager.createdAt).getTime()
           );
         }
-        return a.fullName.localeCompare(b.fullName);
+        return firstManager.fullName.localeCompare(secondManager.fullName);
       });
   }, [managers, search, statusFilter, sortBy]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, sortBy]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredManagers.length / itemsPerPage),
+  );
+
+  const paginatedManagers = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredManagers.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredManagers, currentPage, itemsPerPage]);
 
   const openCreateModal = () => {
     setEditingManager(null);
@@ -366,7 +385,7 @@ export const ManagersModule: React.FC<ManagersModuleProps> = ({ onToast }) => {
                   </td>
                 </tr>
               ) : (
-                filteredManagers.map((manager) => (
+                paginatedManagers.map((manager) => (
                   <tr
                     key={manager.id}
                     className="hover:bg-gray-50/80 transition-colors"
@@ -376,7 +395,7 @@ export const ManagersModule: React.FC<ManagersModuleProps> = ({ onToast }) => {
                         <div className="w-9 h-9 rounded-full bg-[#2E7D5B]/15 text-[#2E7D5B] font-bold flex items-center justify-center">
                           {manager.fullName
                             .split(" ")
-                            .map((n) => n[0])
+                            .map((nameSegment) => nameSegment[0])
                             .join("")
                             .slice(0, 2)
                             .toUpperCase()}
@@ -457,6 +476,17 @@ export const ManagersModule: React.FC<ManagersModuleProps> = ({ onToast }) => {
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/40">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(targetPage) => setCurrentPage(targetPage)}
+              className="pt-0"
+            />
+          </div>
+        )}
       </div>
 
       {/* Provision / Edit Manager Modal */}

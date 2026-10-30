@@ -138,3 +138,4 @@ Before committing or submitting a pull request:
 - [ ] TypeScript types are explicitly specified without indiscriminate use of `any`.
 - [ ] Production conditionals properly protect sensitive UI elements.
 - [ ] Build succeeds with zero compile errors (`npm run build`).
+

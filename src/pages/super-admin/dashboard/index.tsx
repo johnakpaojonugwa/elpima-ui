@@ -1,7 +1,6 @@
 // src/pages/super-admin/dashboard/index.tsx
 import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Check } from "lucide-react";
 
 import { SuperAdminHeader } from "../components/super-admin-header";
 import { SuperAdminSidebar } from "../components/super-admin-sidebar";
@@ -300,16 +299,6 @@ export function SuperAdminDashboardPage() {
           {renderActiveContent()}
         </main>
       </div>
-
-      {/* Floating Toast Feedback */}
-      {toast.message && (
-        <div className="fixed bottom-5 right-5 z-50 bg-[#1e293b] text-white text-xs sm:text-sm font-medium px-4 py-3 rounded-xl shadow-xl flex items-center gap-2.5 animate-in slide-in-from-bottom-5 duration-200">
-          <div className="p-1 rounded-full bg-emerald-500 text-white shrink-0">
-            <Check className="w-3.5 h-3.5" />
-          </div>
-          <span>{toast.message}</span>
-        </div>
-      )}
     </div>
   );
 }

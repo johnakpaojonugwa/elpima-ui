@@ -19,8 +19,8 @@ function emitChange() {
   }
 }
 
-export function dismissToast(id: string) {
-  memoryToasts = memoryToasts.filter((t) => t.id !== id);
+export function dismissToast(toastId: string) {
+  memoryToasts = memoryToasts.filter((toastItem) => toastItem.id !== toastId);
   emitChange();
 }
 
@@ -29,27 +29,30 @@ export function showToast(
   type: ToastType = "info",
   durationMs = 3500,
 ) {
-  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-  memoryToasts = [...memoryToasts, { id, message, type }];
+  const toastId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  memoryToasts = [...memoryToasts, { id: toastId, message, type }];
   emitChange();
 
   if (durationMs > 0) {
     setTimeout(() => {
-      dismissToast(id);
+      dismissToast(toastId);
     }, durationMs);
   }
 
-  return id;
+  return toastId;
 }
 
 export const toast = {
-  show: (msg: string, duration?: number) => showToast(msg, "info", duration),
-  success: (msg: string, duration?: number) =>
-    showToast(msg, "success", duration),
-  error: (msg: string, duration?: number) => showToast(msg, "error", duration),
-  info: (msg: string, duration?: number) => showToast(msg, "info", duration),
-  warning: (msg: string, duration?: number) =>
-    showToast(msg, "warning", duration),
+  show: (toastMessage: string, duration?: number) =>
+    showToast(toastMessage, "info", duration),
+  success: (toastMessage: string, duration?: number) =>
+    showToast(toastMessage, "success", duration),
+  error: (toastMessage: string, duration?: number) =>
+    showToast(toastMessage, "error", duration),
+  info: (toastMessage: string, duration?: number) =>
+    showToast(toastMessage, "info", duration),
+  warning: (toastMessage: string, duration?: number) =>
+    showToast(toastMessage, "warning", duration),
   dismiss: dismissToast,
 };
 

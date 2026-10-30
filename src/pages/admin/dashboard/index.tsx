@@ -2,7 +2,6 @@
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  Check,
   FileSpreadsheet,
   FolderTree,
   ImageUp,
@@ -336,16 +335,6 @@ export function ControlAdminDashboardPage() {
           {renderActiveContent()}
         </main>
       </div>
-
-      {/* Floating Toast Notification */}
-      {toast.message && (
-        <div className="fixed bottom-5 right-5 z-50 bg-[#1e293b] text-white text-xs sm:text-sm font-medium px-4 py-3 rounded-xl shadow-xl flex items-center gap-2.5 animate-in slide-in-from-bottom-5 duration-200">
-          <div className="p-1 rounded-full bg-[#2E7D5B] text-white shrink-0">
-            <Check className="w-3.5 h-3.5" />
-          </div>
-          <span>{toast.message}</span>
-        </div>
-      )}
     </div>
   );
 }

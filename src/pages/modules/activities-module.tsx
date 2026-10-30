@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Activity,
@@ -20,7 +20,7 @@ import {
   Stethoscope,
   X,
 } from "lucide-react";
-import { FloatingSelect } from "@/components/app";
+import { FloatingSelect, Pagination } from "@/components/app";
 import {
   useCategoriesQuery,
   useDashboardAnalyticsQuery,
@@ -315,6 +315,23 @@ export const ActivitiesModule: React.FC = () => {
       });
   }, [allActivities, search, moduleFilter, statusFilter, sortBy]);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, moduleFilter, statusFilter, sortBy]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredActivities.length / itemsPerPage),
+  );
+
+  const paginatedActivities = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredActivities.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredActivities, currentPage, itemsPerPage]);
+
   const isLoading = analyticsLoading && quotesLoading && productsLoading;
 
   return (
@@ -513,7 +530,7 @@ export const ActivitiesModule: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredActivities.map((item) => (
+                paginatedActivities.map((item) => (
                   <tr
                     key={item.id}
                     className="hover:bg-gray-50/80 transition-colors"
@@ -595,6 +612,18 @@ export const ActivitiesModule: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/40">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(targetPage) => setCurrentPage(targetPage)}
+              className="pt-0"
+            />
+          </div>
+        )}
       </div>
 
       {/* Full Operation Details Modal */}

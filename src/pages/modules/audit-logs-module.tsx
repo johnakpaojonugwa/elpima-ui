@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuditLogsQuery } from "@/hooks/queries";
-import { FloatingSelect } from "@/components/app";
+import { FloatingSelect, Pagination } from "@/components/app";
 import type { AuditLog } from "@/types/domain";
 import { formatLiveDate } from "@/utils/date";
 
@@ -311,29 +311,13 @@ export const AuditLogsModule: React.FC = () => {
 
         {/* Pagination */}
         {meta && (meta.totalPages ?? meta.pages ?? 1) > 1 && (
-          <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-100 bg-gray-50/40 text-xs">
-            <span className="text-gray-500">
-              Page <strong>{meta.page}</strong> of{" "}
-              <strong>{meta.totalPages ?? meta.pages}</strong> ({meta.total} total events)
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white font-semibold disabled:opacity-40"
-              >
-                Previous
-              </button>
-              <button
-                type="button"
-                disabled={page >= (meta.totalPages ?? meta.pages ?? 1)}
-                onClick={() => setPage((p) => p + 1)}
-                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white font-semibold disabled:opacity-40"
-              >
-                Next
-              </button>
-            </div>
+          <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/40">
+            <Pagination
+              currentPage={page}
+              totalPages={meta.totalPages ?? meta.pages ?? 1}
+              onPageChange={(targetPage) => setPage(targetPage)}
+              className="pt-0"
+            />
           </div>
         )}
       </div>

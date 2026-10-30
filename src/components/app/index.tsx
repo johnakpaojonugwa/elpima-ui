@@ -6,6 +6,7 @@ import { OtpInput } from "./otp-input";
 import { ErrorBoundary } from "./error-boundary";
 import { ErrorMessage } from "./error-message";
 import { FloatingPopover, FloatingSelect } from "./floating-popover";
+import { Pagination } from "./pagination";
 
 export {
   TextBox,
@@ -17,4 +18,5 @@ export {
   ErrorMessage,
   FloatingPopover,
   FloatingSelect,
+  Pagination,
 };

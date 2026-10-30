@@ -35,8 +35,8 @@ export const SuperAdminActivityTable: React.FC<SuperAdminActivityTableProps> = (
     });
 
     if (sortBy === "staff_asc") {
-      return [...filtered].sort((a, b) =>
-        a.adminName.localeCompare(b.adminName)
+      return [...filtered].sort((firstActivity, secondActivity) =>
+        firstActivity.adminName.localeCompare(secondActivity.adminName)
       );
     }
     return filtered;

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowDownAZ,
   ArrowUpDown,
@@ -22,7 +22,7 @@ import {
   useUpdateSpecialtyMutation,
 } from "@/hooks/queries";
 import { useAuthStore } from "@/store";
-import { FloatingSelect } from "@/components/app";
+import { FloatingSelect, Pagination } from "@/components/app";
 import type { Specialty } from "@/types/domain";
 import { formatLiveDate } from "@/utils/date";
 import {
@@ -37,7 +37,7 @@ interface SpecialtiesModuleProps {
 export const SpecialtiesModule: React.FC<SpecialtiesModuleProps> = ({
   onToast,
 }) => {
-  const userRole = useAuthStore((s) => s.user?.role) ?? "SUPERVISING_MANAGER";
+  const userRole = useAuthStore((state) => state.user?.role) ?? "SUPERVISING_MANAGER";
   const isSuperAdmin = userRole === "SUPER_ADMIN";
 
   const {
@@ -73,29 +73,52 @@ export const SpecialtiesModule: React.FC<SpecialtiesModuleProps> = ({
   const [imageUrl, setImageUrl] = useState("");
 
   const filteredSpecialties = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const searchQuery = search.trim().toLowerCase();
     return specialties
-      .filter((spec) => {
-        if (!q) return true;
+      .filter((specialtyItem) => {
+        if (!searchQuery) return true;
         return (
-          spec.name.toLowerCase().includes(q) ||
-          spec.slug.toLowerCase().includes(q) ||
-          (spec.description ?? "").toLowerCase().includes(q)
+          specialtyItem.name.toLowerCase().includes(searchQuery) ||
+          specialtyItem.slug.toLowerCase().includes(searchQuery) ||
+          (specialtyItem.description ?? "").toLowerCase().includes(searchQuery)
         );
       })
-      .sort((a, b) => {
-        if (sortBy === "name_desc") return b.name.localeCompare(a.name);
+      .sort((firstSpecialty, secondSpecialty) => {
+        if (sortBy === "name_desc") {
+          return secondSpecialty.name.localeCompare(firstSpecialty.name);
+        }
         if (sortBy === "products_desc") {
-          return (b._count?.products ?? 0) - (a._count?.products ?? 0);
+          return (
+            (secondSpecialty._count?.products ?? 0) -
+            (firstSpecialty._count?.products ?? 0)
+          );
         }
         if (sortBy === "newest") {
           return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            new Date(secondSpecialty.createdAt).getTime() -
+            new Date(firstSpecialty.createdAt).getTime()
           );
         }
-        return a.name.localeCompare(b.name);
+        return firstSpecialty.name.localeCompare(secondSpecialty.name);
       });
   }, [specialties, search, sortBy]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, sortBy]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredSpecialties.length / itemsPerPage),
+  );
+
+  const paginatedSpecialties = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredSpecialties.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredSpecialties, currentPage, itemsPerPage]);
 
   const openCreate = () => {
     setEditingSpecialty(null);
@@ -281,37 +304,37 @@ export const SpecialtiesModule: React.FC<SpecialtiesModuleProps> = ({
                   </td>
                 </tr>
               ) : (
-                filteredSpecialties.map((spec, index) => (
+                paginatedSpecialties.map((specialtyItem, specialtyIndex) => (
                   <tr
-                    key={spec.id}
+                    key={specialtyItem.id}
                     className="hover:bg-gray-50/80 transition-colors"
                   >
                     <td className="py-3.5 pl-5 pr-3 font-mono text-gray-500">
-                      {index + 1}
+                      {(currentPage - 1) * itemsPerPage + specialtyIndex + 1}
                     </td>
                     <td className="py-3.5 px-3">
-                      <p className="font-bold text-gray-900">{spec.name}</p>
+                      <p className="font-bold text-gray-900">{specialtyItem.name}</p>
                       <p className="text-[11px] font-mono text-gray-400">
-                        /{spec.slug}
+                        /{specialtyItem.slug}
                       </p>
                     </td>
                     <td className="py-3.5 px-3 text-gray-600 max-w-[300px] truncate">
-                      {spec.description ||
+                      {specialtyItem.description ||
                         "Clinical surgical specialty department"}
                     </td>
                     <td className="py-3.5 px-3">
                       <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[11px]">
-                        {spec._count?.products ?? 0} instruments
+                        {specialtyItem._count?.products ?? 0} instruments
                       </span>
                     </td>
                     <td className="py-3.5 px-3 text-gray-500 whitespace-nowrap">
-                      {formatLiveDate(spec.createdAt)}
+                      {formatLiveDate(specialtyItem.createdAt)}
                     </td>
                     <td className="py-3.5 pl-3 pr-5 text-right">
                       <div className="inline-flex items-center gap-1.5">
                         <button
                           type="button"
-                          onClick={() => openEdit(spec)}
+                          onClick={() => openEdit(specialtyItem)}
                           className="p-2 rounded-lg text-sky-600 hover:bg-sky-50 cursor-pointer"
                           title="Edit Specialty"
                         >
@@ -320,7 +343,7 @@ export const SpecialtiesModule: React.FC<SpecialtiesModuleProps> = ({
                         {isSuperAdmin && (
                           <button
                             type="button"
-                            onClick={() => setDeletingSpecialty(spec)}
+                            onClick={() => setDeletingSpecialty(specialtyItem)}
                             className="p-2 rounded-lg text-rose-600 hover:bg-rose-50 cursor-pointer"
                             title="Delete Specialty"
                           >
@@ -335,6 +358,17 @@ export const SpecialtiesModule: React.FC<SpecialtiesModuleProps> = ({
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/40">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(targetPage) => setCurrentPage(targetPage)}
+              className="pt-0"
+            />
+          </div>
+        )}
       </div>
 
       {/* Create / Edit Modal */}
