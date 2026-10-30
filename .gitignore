@@ -12,3 +12,4 @@ repomix-output.md
 .prettierignore
 .prettier.json
 .agents/
+agent.md
