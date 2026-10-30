@@ -32,10 +32,10 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
   const stringVal = typeof value === "string" ? value : "";
   const evaluation = evaluatePassword(stringVal);
 
-  const toggleVisibility = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const toggleVisibility = (mouseEvent: React.MouseEvent) => {
+    mouseEvent.preventDefault();
     if (!disabled) {
-      setShowPassword((prev) => !prev);
+      setShowPassword((isCurrentlyVisible) => !isCurrentlyVisible);
     }
   };
 
@@ -79,13 +79,13 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
           placeholder={placeholder}
           required={required}
           onChange={onChange}
-          onFocus={(e) => {
+          onFocus={(focusEvent) => {
             setIsFocused(true);
-            onFocus?.(e);
+            onFocus?.(focusEvent);
           }}
-          onBlur={(e) => {
+          onBlur={(blurEvent) => {
             setIsFocused(false);
-            onBlur?.(e);
+            onBlur?.(blurEvent);
           }}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${inputId}-error` : undefined}

@@ -40,27 +40,27 @@ const CatalogPage: React.FC = () => {
   const { data: categories = [] } = useCategoriesQuery();
   const { data: specialties = [] } = useSpecialtiesQuery();
 
-  const updateParam = (key: string, val: string) => {
-    const next = new URLSearchParams(searchParams);
-    if (val) {
-      next.set(key, val);
+  const updateSearchParameter = (parameterKey: string, parameterValue: string) => {
+    const nextSearchParams = new URLSearchParams(searchParams);
+    if (parameterValue) {
+      nextSearchParams.set(parameterKey, parameterValue);
     } else {
-      next.delete(key);
+      nextSearchParams.delete(parameterKey);
     }
     setPage(1);
-    next.delete("page");
-    setSearchParams(next);
+    nextSearchParams.delete("page");
+    setSearchParams(nextSearchParams);
   };
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    const next = new URLSearchParams(searchParams);
+    const nextSearchParams = new URLSearchParams(searchParams);
     if (newPage > 1) {
-      next.set("page", String(newPage));
+      nextSearchParams.set("page", String(newPage));
     } else {
-      next.delete("page");
+      nextSearchParams.delete("page");
     }
-    setSearchParams(next);
+    setSearchParams(nextSearchParams);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -88,14 +88,16 @@ const CatalogPage: React.FC = () => {
           <input
             type="search"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(changeEvent) => setSearch(changeEvent.target.value)}
             placeholder="Search by product name, SKU, or brand..."
             className="w-full max-w-md rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm focus:border-[#2E7D5B] focus:outline-none"
           />
 
           <FloatingSelect
             value={category}
-            onChange={(val) => updateParam("category", val)}
+            onChange={(selectedValue) =>
+              updateSearchParameter("category", selectedValue)
+            }
             menuTitle="Filter by Category"
             icon={<FolderTree className="w-4 h-4" />}
             isActiveFilter={Boolean(category)}
@@ -106,9 +108,9 @@ const CatalogPage: React.FC = () => {
                 label: "All Categories",
                 icon: <FolderTree className="w-3.5 h-3.5" />,
               },
-              ...categories.map((cat) => ({
-                value: cat.slug,
-                label: cat.name,
+              ...categories.map((categoryItem) => ({
+                value: categoryItem.slug,
+                label: categoryItem.name,
                 icon: <FolderTree className="w-3.5 h-3.5" />,
               })),
             ]}
@@ -116,7 +118,9 @@ const CatalogPage: React.FC = () => {
 
           <FloatingSelect
             value={specialty}
-            onChange={(val) => updateParam("specialty", val)}
+            onChange={(selectedValue) =>
+              updateSearchParameter("specialty", selectedValue)
+            }
             menuTitle="Filter by Specialty"
             icon={<Stethoscope className="w-4 h-4" />}
             isActiveFilter={Boolean(specialty)}
@@ -127,9 +131,9 @@ const CatalogPage: React.FC = () => {
                 label: "All Specialties",
                 icon: <Stethoscope className="w-3.5 h-3.5" />,
               },
-              ...specialties.map((spec) => ({
-                value: spec.slug,
-                label: spec.name,
+              ...specialties.map((specialtyItem) => ({
+                value: specialtyItem.slug,
+                label: specialtyItem.name,
                 icon: <Stethoscope className="w-3.5 h-3.5" />,
               })),
             ]}
@@ -160,31 +164,31 @@ const CatalogPage: React.FC = () => {
         ) : (
           <>
             <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {data.items.map((product) => (
+              {data.items.map((productItem) => (
                 <Link
-                  key={product.id}
-                  to={`/products/${product.slug}`}
+                  key={productItem.id}
+                  to={`/products/${productItem.slug}`}
                   className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs hover:border-sky-500"
                 >
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-medium text-sky-600">
-                      {product.category?.name}
+                      {productItem.category?.name}
                     </span>
                     <span
                       className={
-                        product.inStock ? "text-emerald-600" : "text-amber-600"
+                        productItem.inStock ? "text-emerald-600" : "text-amber-600"
                       }
                     >
-                      {product.inStock
+                      {productItem.inStock
                         ? "In Stock"
-                        : product.leadTime || "Lead time"}
+                        : productItem.leadTime || "Lead time"}
                     </span>
                   </div>
                   <h2 className="mt-2 font-semibold text-slate-900">
-                    {product.name}
+                    {productItem.name}
                   </h2>
                   <p className="mt-1 line-clamp-2 text-sm text-slate-600">
-                    {product.shortDescription}
+                    {productItem.shortDescription}
                   </p>
                 </Link>
               ))}

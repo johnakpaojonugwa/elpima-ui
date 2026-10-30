@@ -77,16 +77,18 @@ const HomePage: React.FC = () => {
               Equipment Categories
             </h2>
             <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {categories.map((cat) => (
+              {categories.map((categoryItem) => (
                 <Link
-                  key={cat.id}
-                  to={`${ROUTES.PUBLIC.CATALOG}?category=${cat.slug}`}
+                  key={categoryItem.id}
+                  to={`${ROUTES.PUBLIC.CATALOG}?category=${categoryItem.slug}`}
                   className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs transition hover:border-sky-500"
                 >
-                  <p className="font-semibold text-slate-900">{cat.name}</p>
-                  {cat._count && (
+                  <p className="font-semibold text-slate-900">
+                    {categoryItem.name}
+                  </p>
+                  {categoryItem._count && (
                     <p className="mt-1 text-xs text-slate-500">
-                      {cat._count.products} Products
+                      {categoryItem._count.products} Products
                     </p>
                   )}
                 </Link>

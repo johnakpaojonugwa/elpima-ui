@@ -44,19 +44,20 @@ export function ControlAdminRecentActivitiesTable({
   const triggerRef = useRef<HTMLElement | null>(null);
 
   const filtered = rows
-    .filter((r) => {
-      if (moduleFilter !== "All" && r.module !== moduleFilter) return false;
+    .filter((activityRow) => {
+      if (moduleFilter !== "All" && activityRow.module !== moduleFilter)
+        return false;
       if (!search.trim()) return true;
-      const q = search.toLowerCase();
+      const searchQuery = search.toLowerCase();
       return (
-        r.action.toLowerCase().includes(q) ||
-        r.reference.toLowerCase().includes(q) ||
-        r.module.toLowerCase().includes(q)
+        activityRow.action.toLowerCase().includes(searchQuery) ||
+        activityRow.reference.toLowerCase().includes(searchQuery) ||
+        activityRow.module.toLowerCase().includes(searchQuery)
       );
     })
-    .sort((a, b) => {
+    .sort((firstRow, secondRow) => {
       if (sortOrder === "module_asc") {
-        return a.module.localeCompare(b.module);
+        return firstRow.module.localeCompare(secondRow.module);
       }
       return 0;
     });
@@ -80,7 +81,7 @@ export function ControlAdminRecentActivitiesTable({
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(changeEvent) => setSearch(changeEvent.target.value)}
               placeholder="Filter operations..."
               className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#2E7D5B]"
             />
@@ -95,7 +96,7 @@ export function ControlAdminRecentActivitiesTable({
             icon={<Filter className="w-4 h-4" />}
             isActiveFilter={moduleFilter !== "All"}
             value={moduleFilter}
-            onChange={(val) => setModuleFilter(val)}
+            onChange={(selectedValue) => setModuleFilter(selectedValue)}
             options={[
               {
                 value: "All",
@@ -139,7 +140,9 @@ export function ControlAdminRecentActivitiesTable({
             icon={<ArrowUpDown className="w-4 h-4" />}
             isActiveFilter={sortOrder !== "latest"}
             value={sortOrder}
-            onChange={(val) => setSortOrder(val as "latest" | "module_asc")}
+            onChange={(selectedValue) =>
+              setSortOrder(selectedValue as "latest" | "module_asc")
+            }
             options={[
               {
                 value: "latest",
@@ -209,10 +212,10 @@ export function ControlAdminRecentActivitiesTable({
                 <td className="py-3.5 pl-3 text-right">
                   <button
                     type="button"
-                    onClick={(e) => {
-                      triggerRef.current = e.currentTarget;
-                      setActivePopoverRow((curr) =>
-                        curr?.id === row.id ? null : row
+                    onClick={(clickEvent) => {
+                      triggerRef.current = clickEvent.currentTarget;
+                      setActivePopoverRow((currentRow) =>
+                        currentRow?.id === row.id ? null : row,
                       );
                     }}
                     aria-label={`Actions for ${row.reference}`}

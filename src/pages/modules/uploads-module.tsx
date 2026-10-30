@@ -52,107 +52,107 @@ export const UploadsModule: React.FC<UploadsModuleProps> = ({ onToast }) => {
 
   const allAssets = useMemo(() => {
     const productAssets: UploadedAssetItem[] = [];
-    (productsRes?.items ?? []).forEach((prod) => {
-      (prod.images ?? []).forEach((imgUrl, idx) => {
+    (productsRes?.items ?? []).forEach((productItem) => {
+      (productItem.images ?? []).forEach((imageUrl, imageIndex) => {
         productAssets.push({
-          id: `${prod.id}-${idx}`,
-          url: imgUrl,
-          sourceName: prod.name,
-          sku: prod.sku,
-          uploadedAt: prod.updatedAt || prod.createdAt,
+          id: `${productItem.id}-${imageIndex}`,
+          url: imageUrl,
+          sourceName: productItem.name,
+          sku: productItem.sku,
+          uploadedAt: productItem.updatedAt || productItem.createdAt,
         });
       });
     });
 
     const combined = [...sessionAssets, ...productAssets];
-    const q = search.trim().toLowerCase();
-    if (!q) return combined;
+    const searchQuery = search.trim().toLowerCase();
+    if (!searchQuery) return combined;
     return combined.filter(
-      (a) =>
-        a.sourceName.toLowerCase().includes(q) ||
-        (a.sku ?? "").toLowerCase().includes(q) ||
-        a.url.toLowerCase().includes(q),
+      (assetItem) =>
+        assetItem.sourceName.toLowerCase().includes(searchQuery) ||
+        (assetItem.sku ?? "").toLowerCase().includes(searchQuery) ||
+        assetItem.url.toLowerCase().includes(searchQuery),
     );
   }, [productsRes, sessionAssets, search]);
 
   const handleSingleFileChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
+    changeEvent: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    const file = e.target.files?.[0];
+    const file = changeEvent.target.files?.[0];
     if (!file) return;
     setUploadError("");
 
     const validationError = validateUploadFile(file);
     if (validationError) {
       setUploadError(validationError);
-      e.target.value = "";
+      changeEvent.target.value = "";
       return;
     }
 
     try {
-      const res = await uploadSingle.mutateAsync(file);
-      if (res?.url) {
-        setSessionAssets((prev) => [
+      const uploadResponse = await uploadSingle.mutateAsync(file);
+      if (uploadResponse?.url) {
+        setSessionAssets((previousAssets) => [
           {
             id: `session-${Date.now()}`,
-            url: res.url,
+            url: uploadResponse.url,
             sourceName: file.name,
             sku: "NEW-UPLOAD",
             uploadedAt: new Date().toISOString(),
           },
-          ...prev,
+          ...previousAssets,
         ]);
         onToast?.(`Uploaded ${file.name}`);
       }
-    } catch (err: any) {
+    } catch (uploadError: any) {
       setUploadError(
-        err?.normalizedMessage ||
-          err?.response?.data?.message ||
+        uploadError?.normalizedMessage ||
+          uploadError?.response?.data?.message ||
           "Upload failed. Ensure file is JPEG, PNG, or WebP under 5MB.",
       );
     } finally {
-      e.target.value = "";
+      changeEvent.target.value = "";
     }
   };
 
   const handleBatchFilesChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
+    changeEvent: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    const filesList = e.target.files;
+    const filesList = changeEvent.target.files;
     if (!filesList || filesList.length === 0) return;
     setUploadError("");
 
     const files = Array.from(filesList).slice(0, 10);
 
-    for (const f of files) {
-      const validationError = validateUploadFile(f);
+    for (const fileItem of files) {
+      const validationError = validateUploadFile(fileItem);
       if (validationError) {
         setUploadError(validationError);
-        e.target.value = "";
+        changeEvent.target.value = "";
         return;
       }
     }
 
     try {
-      const res = await uploadMultiple.mutateAsync(files);
-      const urls = res?.urls ?? [];
-      const created: UploadedAssetItem[] = urls.map((url, idx) => ({
-        id: `batch-${Date.now()}-${idx}`,
+      const uploadResponse = await uploadMultiple.mutateAsync(files);
+      const urls = uploadResponse?.urls ?? [];
+      const created: UploadedAssetItem[] = urls.map((url, urlIndex) => ({
+        id: `batch-${Date.now()}-${urlIndex}`,
         url,
-        sourceName: files[idx]?.name || `Batch Upload #${idx + 1}`,
+        sourceName: files[urlIndex]?.name || `Batch Upload #${urlIndex + 1}`,
         sku: "BATCH-UPLOAD",
         uploadedAt: new Date().toISOString(),
       }));
-      setSessionAssets((prev) => [...created, ...prev]);
+      setSessionAssets((previousAssets) => [...created, ...previousAssets]);
       onToast?.(`Uploaded ${created.length} surgical product image(s)`);
-    } catch (err: any) {
+    } catch (uploadError: any) {
       setUploadError(
-        err?.normalizedMessage ||
-          err?.response?.data?.message ||
+        uploadError?.normalizedMessage ||
+          uploadError?.response?.data?.message ||
           "Batch upload failed. Max 10 JPEG/PNG/WebP images (5MB each).",
       );
     } finally {
-      e.target.value = "";
+      changeEvent.target.value = "";
     }
   };
 
@@ -238,7 +238,7 @@ export const UploadsModule: React.FC<UploadsModuleProps> = ({ onToast }) => {
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(changeEvent) => setSearch(changeEvent.target.value)}
             placeholder="Filter media library by product name, SKU, or filename..."
             className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-[#2E7D5B]"
           />
@@ -255,20 +255,20 @@ export const UploadsModule: React.FC<UploadsModuleProps> = ({ onToast }) => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {allAssets.map((asset) => (
+          {allAssets.map((assetItem) => (
             <div
-              key={asset.id}
+              key={assetItem.id}
               className="bg-white rounded-2xl border border-gray-100 shadow-2xs overflow-hidden flex flex-col justify-between group"
             >
               <div className="relative h-44 bg-gray-100 overflow-hidden">
                 <img
-                  src={asset.url}
-                  alt={asset.sourceName}
+                  src={assetItem.url}
+                  alt={assetItem.sourceName}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
-                {asset.sku && (
+                {assetItem.sku && (
                   <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/70 text-white font-mono text-[10px] font-semibold">
-                    {asset.sku}
+                    {assetItem.sku}
                   </span>
                 )}
               </div>
@@ -276,20 +276,20 @@ export const UploadsModule: React.FC<UploadsModuleProps> = ({ onToast }) => {
               <div className="p-3.5 space-y-2">
                 <div>
                   <p className="text-xs font-bold text-gray-900 truncate">
-                    {asset.sourceName}
+                    {assetItem.sourceName}
                   </p>
                   <p className="text-[10px] text-gray-400">
-                    {formatLiveDate(asset.uploadedAt)}
+                    {formatLiveDate(assetItem.uploadedAt)}
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2 pt-1">
                   <button
                     type="button"
-                    onClick={() => handleCopyUrl(asset)}
+                    onClick={() => handleCopyUrl(assetItem)}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-[11px] font-bold text-gray-800 transition cursor-pointer"
                   >
-                    {copiedId === asset.id ? (
+                    {copiedId === assetItem.id ? (
                       <>
                         <Check className="w-3.5 h-3.5 text-emerald-600" />
                         <span>Copied!</span>
@@ -303,7 +303,7 @@ export const UploadsModule: React.FC<UploadsModuleProps> = ({ onToast }) => {
                   </button>
 
                   <a
-                    href={asset.url}
+                    href={assetItem.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-1.5 rounded-xl border border-gray-200 text-gray-500 hover:text-gray-900"

@@ -11,7 +11,4 @@ repomix-output.md
 .tmp/
 .prettierignore
 .prettier.json
-.AGENTS.md
-AGENTS.md
-agent.md
 .agents/

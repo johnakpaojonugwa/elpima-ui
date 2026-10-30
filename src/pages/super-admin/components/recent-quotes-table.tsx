@@ -30,14 +30,23 @@ export const RecentQuotesTable: React.FC<RecentQuotesTableProps> = ({
   const [sortBy, setSortBy] = useState<"default" | "urgent_first">("default");
 
   const displayedQuotes = useMemo(() => {
-    const filtered = quotes.filter((q) => {
-      if (statusFilter !== "all" && q.status !== statusFilter) return false;
+    const filtered = quotes.filter((quoteItem) => {
+      if (statusFilter !== "all" && quoteItem.status !== statusFilter)
+        return false;
       return true;
     });
     if (sortBy === "urgent_first") {
-      return [...filtered].sort((a, b) => {
-        if (a.priority === "URGENT" && b.priority !== "URGENT") return -1;
-        if (b.priority === "URGENT" && a.priority !== "URGENT") return 1;
+      return [...filtered].sort((firstQuote, secondQuote) => {
+        if (
+          firstQuote.priority === "URGENT" &&
+          secondQuote.priority !== "URGENT"
+        )
+          return -1;
+        if (
+          secondQuote.priority === "URGENT" &&
+          firstQuote.priority !== "URGENT"
+        )
+          return 1;
         return 0;
       });
     }
@@ -61,7 +70,7 @@ export const RecentQuotesTable: React.FC<RecentQuotesTableProps> = ({
             icon={<Filter className="w-4 h-4" />}
             isActiveFilter={statusFilter !== "all"}
             value={statusFilter}
-            onChange={(val) => setStatusFilter(val)}
+            onChange={(selectedValue) => setStatusFilter(selectedValue)}
             options={[
               {
                 value: "all",
@@ -100,7 +109,9 @@ export const RecentQuotesTable: React.FC<RecentQuotesTableProps> = ({
             icon={<ArrowUpDown className="w-4 h-4" />}
             isActiveFilter={sortBy !== "default"}
             value={sortBy}
-            onChange={(val) => setSortBy(val as "default" | "urgent_first")}
+            onChange={(selectedValue) =>
+              setSortBy(selectedValue as "default" | "urgent_first")
+            }
             options={[
               {
                 value: "default",
@@ -140,56 +151,60 @@ export const RecentQuotesTable: React.FC<RecentQuotesTableProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100/80">
-            {displayedQuotes.map((q) => (
+            {displayedQuotes.map((quoteItem) => (
               <tr
-                key={q.id}
+                key={quoteItem.id}
                 className="hover:bg-stone-50/70 transition-colors group"
               >
-                <td className="py-3.5 px-3 font-bold text-stone-800">{q.no}</td>
+                <td className="py-3.5 px-3 font-bold text-stone-800">
+                  {quoteItem.no}
+                </td>
                 <td className="py-3.5 px-3 font-mono font-bold text-stone-900">
-                  {q.reference}
+                  {quoteItem.reference}
                 </td>
                 <td className="py-3.5 px-3 font-medium text-stone-800">
-                  {q.customerName}
+                  {quoteItem.customerName}
                 </td>
                 <td className="py-3.5 px-3 text-stone-600">
-                  {q.hospitalClinic}
+                  {quoteItem.hospitalClinic}
                 </td>
                 <td className="py-3.5 px-3">
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                      q.priority === "URGENT"
+                      quoteItem.priority === "URGENT"
                         ? "bg-rose-100 text-rose-700"
                         : "bg-stone-100 text-stone-700"
                     }`}
                   >
-                    {q.priority}
+                    {quoteItem.priority}
                   </span>
                 </td>
                 <td className="py-3.5 px-3">
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                      q.status === "FULFILLED"
+                      quoteItem.status === "FULFILLED"
                         ? "bg-emerald-100 text-emerald-800"
-                        : q.status === "QUOTED"
+                        : quoteItem.status === "QUOTED"
                           ? "bg-blue-100 text-blue-800"
                           : "bg-amber-100 text-amber-800"
                     }`}
                   >
-                    {q.status}
+                    {quoteItem.status}
                   </span>
                 </td>
-                <td className="py-3.5 px-3 text-stone-600">{q.dateCreated}</td>
+                <td className="py-3.5 px-3 text-stone-600">
+                  {quoteItem.dateCreated}
+                </td>
                 <td className="py-3.5 px-3 text-right">
                   <button
                     type="button"
-                    onClick={(e) => {
-                      triggerRef.current = e.currentTarget;
-                      setActivePopoverQuote((curr) =>
-                        curr?.id === q.id ? null : q
+                    onClick={(clickEvent) => {
+                      triggerRef.current = clickEvent.currentTarget;
+                      setActivePopoverQuote((currentQuote) =>
+                        currentQuote?.id === quoteItem.id ? null : quoteItem,
                       );
                     }}
-                    aria-label={`Actions for quote ${q.reference}`}
+                    aria-label={`Actions for quote ${quoteItem.reference}`}
                     className="inline-flex items-center justify-center p-1.5 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors cursor-pointer"
                   >
                     <MoreHorizontal className="w-5 h-5" />

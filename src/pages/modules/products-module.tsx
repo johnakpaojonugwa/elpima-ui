@@ -158,30 +158,36 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
 
   const statsSummary = useMemo(() => {
     const total = meta?.total ?? products.length;
-    const inStockCount = products.filter((p) => p.inStock).length;
-    const featuredCount = products.filter((p) => p.isFeatured).length;
+    const inStockCount = products.filter(
+      (productItem) => productItem.inStock,
+    ).length;
+    const featuredCount = products.filter(
+      (productItem) => productItem.isFeatured,
+    ).length;
     return { total, inStockCount, featuredCount };
   }, [products, meta]);
 
   const [selectedBlueprintSku, setSelectedBlueprintSku] = useState("");
 
-  const resolveCategoryCodeById = (catId: string): string => {
-    const cat = categories.find((c) => c.id === catId);
-    if (!cat) return "END";
+  const resolveCategoryCodeById = (targetCategoryId: string): string => {
+    const categoryItem = categories.find(
+      (existingCategory) => existingCategory.id === targetCategoryId,
+    );
+    if (!categoryItem) return "END";
     return deriveCategoryCodePrefix(
-      cat.name,
-      cat.slug,
-      cat.description ?? undefined,
+      categoryItem.name,
+      categoryItem.slug,
+      categoryItem.description ?? undefined,
     );
   };
 
   const openCreateModal = () => {
-    const initialCat = categories[0];
-    const initialCatCode = initialCat
+    const initialCategory = categories[0];
+    const initialCategoryCode = initialCategory
       ? deriveCategoryCodePrefix(
-          initialCat.name,
-          initialCat.slug,
-          initialCat.description ?? undefined,
+          initialCategory.name,
+          initialCategory.slug,
+          initialCategory.description ?? undefined,
         )
       : "END";
     const nextModelSeq = (meta?.total ?? products.length) + 1;
@@ -190,9 +196,11 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
     setSelectedBlueprintSku("");
     setFormError("");
     setName("");
-    setSku(generateClinicalSku(initialCatCode, "Surgical Stapler", nextModelSeq));
+    setSku(
+      generateClinicalSku(initialCategoryCode, "Surgical Stapler", nextModelSeq),
+    );
     setSlug("");
-    setCategoryId(initialCat?.id ?? "");
+    setCategoryId(initialCategory?.id ?? "");
     setSpecialtyId(specialties[0]?.id ?? "");
     setShortDescription("");
     setDescription("");
@@ -205,7 +213,7 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
     setImageUrls([
       "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80",
     ]);
-    setSpecRows(getDefaultSpecsForCategorySlug(initialCat?.slug));
+    setSpecRows(getDefaultSpecsForCategorySlug(initialCategory?.slug));
     setIsFormOpen(true);
   };
 
@@ -213,34 +221,50 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
     setName(nextName);
     if (!editingProduct) {
       setSlug(slugifyText(nextName));
-      const catCode = resolveCategoryCodeById(categoryId);
+      const categoryCode = resolveCategoryCodeById(categoryId);
       const nextModelSeq = (meta?.total ?? products.length) + 1;
-      setSku(generateClinicalSku(catCode, nextName, nextModelSeq));
+      setSku(generateClinicalSku(categoryCode, nextName, nextModelSeq));
     }
   };
 
-  const handleCategoryChange = (nextCatId: string) => {
-    setCategoryId(nextCatId);
-    const cat = categories.find((c) => c.id === nextCatId);
-    const catCode = resolveCategoryCodeById(nextCatId);
+  const handleCategoryChange = (nextCategoryId: string) => {
+    setCategoryId(nextCategoryId);
+    const categoryItem = categories.find(
+      (existingCategory) => existingCategory.id === nextCategoryId,
+    );
+    const categoryCode = resolveCategoryCodeById(nextCategoryId);
     if (!editingProduct) {
       const nextModelSeq = (meta?.total ?? products.length) + 1;
-      setSku(generateClinicalSku(catCode, name || "Surgical Stapler", nextModelSeq));
-      if (!selectedBlueprintSku && cat?.slug) {
-        setSpecRows(getDefaultSpecsForCategorySlug(cat.slug, name));
+      setSku(
+        generateClinicalSku(
+          categoryCode,
+          name || "Surgical Stapler",
+          nextModelSeq,
+        ),
+      );
+      if (!selectedBlueprintSku && categoryItem?.slug) {
+        setSpecRows(getDefaultSpecsForCategorySlug(categoryItem.slug, name));
       }
     }
   };
 
   const handleRegenerateSku = () => {
-    const catCode = resolveCategoryCodeById(categoryId);
+    const categoryCode = resolveCategoryCodeById(categoryId);
     const nextModelSeq = (meta?.total ?? products.length) + 1;
-    setSku(generateClinicalSku(catCode, name || "Surgical Stapler", nextModelSeq));
+    setSku(
+      generateClinicalSku(
+        categoryCode,
+        name || "Surgical Stapler",
+        nextModelSeq,
+      ),
+    );
   };
 
   const handleLoadCategorySpecs = () => {
-    const cat = categories.find((c) => c.id === categoryId);
-    setSpecRows(getDefaultSpecsForCategorySlug(cat?.slug, name));
+    const categoryItem = categories.find(
+      (existingCategory) => existingCategory.id === categoryId,
+    );
+    setSpecRows(getDefaultSpecsForCategorySlug(categoryItem?.slug, name));
   };
 
   const handleApplyBlueprint = (blueprintSku: string) => {
@@ -313,8 +337,10 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
     setIsFormOpen(true);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileUpload = async (
+    changeEvent: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = changeEvent.target.files?.[0];
     if (!file) return;
 
     const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp"];
@@ -322,36 +348,36 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
       setFormError(
         `Invalid format for "${file.name}". Only JPEG, PNG, and WebP are allowed.`,
       );
-      e.target.value = "";
+      changeEvent.target.value = "";
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
       setFormError(`"${file.name}" exceeds the 5MB size limit (${sizeMb}MB).`);
-      e.target.value = "";
+      changeEvent.target.value = "";
       return;
     }
 
     try {
       const uploaded = await uploadImage.mutateAsync(file);
       if (uploaded?.url) {
-        setImageUrls((prev) => [...prev, uploaded.url]);
+        setImageUrls((previousImageUrls) => [...previousImageUrls, uploaded.url]);
         onToast?.("Product image uploaded successfully");
       }
-    } catch (err: any) {
+    } catch (uploadError: any) {
       setFormError(
-        err?.normalizedMessage ||
-          err?.response?.data?.message ||
+        uploadError?.normalizedMessage ||
+          uploadError?.response?.data?.message ||
           "Image upload failed. Ensure file is JPEG/PNG/WebP under 5MB.",
       );
     } finally {
-      e.target.value = "";
+      changeEvent.target.value = "";
     }
   };
 
-  const handleSaveProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveProduct = async (submitEvent: React.FormEvent) => {
+    submitEvent.preventDefault();
     setFormError("");
 
     if (!name.trim()) {
@@ -363,13 +389,13 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
       return;
     }
     const validImages = imageUrls
-      .map((u) => u.trim())
+      .map((imageUrl) => imageUrl.trim())
       .filter(
-        (u) =>
-          u &&
-          (u.startsWith("https://") ||
-            u.startsWith("/") ||
-            u.startsWith("http://localhost")),
+        (imageUrl) =>
+          imageUrl &&
+          (imageUrl.startsWith("https://") ||
+            imageUrl.startsWith("/") ||
+            imageUrl.startsWith("http://localhost")),
       );
     if (validImages.length === 0) {
       setFormError(
@@ -415,10 +441,10 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
         onToast?.(`Created "${name.trim()}"`);
       }
       setIsFormOpen(false);
-    } catch (err: any) {
+    } catch (mutationError: any) {
       setFormError(
-        err?.normalizedMessage ||
-          err?.response?.data?.message ||
+        mutationError?.normalizedMessage ||
+          mutationError?.response?.data?.message ||
           "Failed to save product. Check all fields and try again.",
       );
     }
@@ -438,8 +464,8 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
       onToast?.(
         `${product.name} marked as ${!product.inStock ? "In Stock" : "Out of Stock"}`,
       );
-    } catch (err: any) {
-      onToast?.(err?.normalizedMessage || "Could not update stock status");
+    } catch (mutationError: any) {
+      onToast?.(mutationError?.normalizedMessage || "Could not update stock status");
     }
   };
 
@@ -449,8 +475,8 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
       await deleteProduct.mutateAsync(deletingProduct.id);
       onToast?.(`Deleted "${deletingProduct.name}"`);
       setDeletingProduct(null);
-    } catch (err: any) {
-      onToast?.(err?.normalizedMessage || "Could not delete product");
+    } catch (mutationError: any) {
+      onToast?.(mutationError?.normalizedMessage || "Could not delete product");
     }
   };
 
@@ -562,8 +588,8 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
             <input
               type="text"
               value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
+              onChange={(changeEvent) => {
+                setSearch(changeEvent.target.value);
                 setPage(1);
               }}
               placeholder="Search by product name, SKU, or keyword..."
@@ -574,8 +600,8 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
           {/* Category Filter */}
           <FloatingSelect
             value={selectedCategory}
-            onChange={(val) => {
-              setSelectedCategory(val);
+            onChange={(selectedValue) => {
+              setSelectedCategory(selectedValue);
               setPage(1);
             }}
             menuTitle="Filter by Category"
@@ -589,9 +615,9 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                 label: "All Categories",
                 icon: <FolderTree className="w-3.5 h-3.5" />,
               },
-              ...categories.map((cat) => ({
-                value: cat.slug,
-                label: cat.name,
+              ...categories.map((categoryItem) => ({
+                value: categoryItem.slug,
+                label: categoryItem.name,
                 icon: <FolderTree className="w-3.5 h-3.5" />,
               })),
             ]}
@@ -600,8 +626,8 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
           {/* Specialty Filter */}
           <FloatingSelect
             value={selectedSpecialty}
-            onChange={(val) => {
-              setSelectedSpecialty(val);
+            onChange={(selectedValue) => {
+              setSelectedSpecialty(selectedValue);
               setPage(1);
             }}
             menuTitle="Filter by Specialty"
@@ -615,9 +641,9 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                 label: "All Specialties",
                 icon: <Stethoscope className="w-3.5 h-3.5" />,
               },
-              ...specialties.map((spec) => ({
-                value: spec.slug,
-                label: spec.name,
+              ...specialties.map((specialtyItem) => ({
+                value: specialtyItem.slug,
+                label: specialtyItem.name,
                 icon: <Stethoscope className="w-3.5 h-3.5" />,
               })),
             ]}
@@ -626,8 +652,8 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
           {/* Stock Filter */}
           <FloatingSelect
             value={stockFilter}
-            onChange={(val) => {
-              setStockFilter(val as "" | "true" | "false");
+            onChange={(selectedValue) => {
+              setStockFilter(selectedValue as "" | "true" | "false");
               setPage(1);
             }}
             menuTitle="Filter by Availability"
@@ -657,8 +683,8 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
           {/* Sort */}
           <FloatingSelect
             value={sort}
-            onChange={(val) => {
-              setSort(val as ProductSortOption);
+            onChange={(selectedValue) => {
+              setSort(selectedValue as ProductSortOption);
               setPage(1);
             }}
             menuTitle="Sort Equipment"
@@ -911,7 +937,9 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
               <button
                 type="button"
                 disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() =>
+                  setPage((previousPage) => Math.max(1, previousPage - 1))
+                }
                 className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 font-semibold disabled:opacity-40 hover:bg-gray-50 cursor-pointer"
               >
                 Previous
@@ -919,7 +947,7 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
               <button
                 type="button"
                 disabled={page >= (meta.totalPages ?? meta.pages ?? 1)}
-                onClick={() => setPage((p) => p + 1)}
+                onClick={() => setPage((previousPage) => previousPage + 1)}
                 className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 font-semibold disabled:opacity-40 hover:bg-gray-50 cursor-pointer"
               >
                 Next
@@ -979,7 +1007,7 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   </div>
                   <FloatingSelect
                     value={selectedBlueprintSku}
-                    onChange={(val) => handleApplyBlueprint(val)}
+                    onChange={(selectedSku) => handleApplyBlueprint(selectedSku)}
                     menuTitle="Select HAS Medical Stapler Model Blueprint"
                     placeholder="Choose one of the 16 HAS Medical Stapler models to auto-fill specs & SKU..."
                     icon={<Wand2 className="w-3.5 h-3.5" />}
@@ -1008,7 +1036,9 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   <input
                     type="text"
                     value={name}
-                    onChange={(e) => handleNameChange(e.target.value)}
+                    onChange={(changeEvent) =>
+                      handleNameChange(changeEvent.target.value)
+                    }
                     placeholder="e.g. Disposable Endo Cutter Stapler"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2E7D5B]"
                     required
@@ -1033,7 +1063,9 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   <input
                     type="text"
                     value={sku}
-                    onChange={(e) => setSku(e.target.value.toUpperCase())}
+                    onChange={(changeEvent) =>
+                      setSku(changeEvent.target.value.toUpperCase())
+                    }
                     placeholder="ELP-END-ECS-002"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 font-mono font-bold text-[#2E7D5B] focus:outline-none focus:border-[#2E7D5B]"
                   />
@@ -1049,7 +1081,7 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   <input
                     type="text"
                     value={slug}
-                    onChange={(e) => setSlug(e.target.value)}
+                    onChange={(changeEvent) => setSlug(changeEvent.target.value)}
                     placeholder="disposable-endo-cutter-stapler"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 font-mono focus:outline-none focus:border-[#2E7D5B]"
                   />
@@ -1061,21 +1093,23 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   </label>
                   <FloatingSelect
                     value={categoryId}
-                    onChange={(val) => handleCategoryChange(val)}
+                    onChange={(selectedCategoryId) =>
+                      handleCategoryChange(selectedCategoryId)
+                    }
                     placeholder="Select Category"
                     matchWidth
                     className="w-full text-xs"
                     options={[
                       { value: "", label: "Select Category" },
-                      ...categories.map((cat) => {
+                      ...categories.map((categoryItem) => {
                         const prefix = deriveCategoryCodePrefix(
-                          cat.name,
-                          cat.slug,
-                          cat.description ?? undefined,
+                          categoryItem.name,
+                          categoryItem.slug,
+                          categoryItem.description ?? undefined,
                         );
                         return {
-                          value: cat.id,
-                          label: `[${prefix}] ${cat.name}`,
+                          value: categoryItem.id,
+                          label: `[${prefix}] ${categoryItem.name}`,
                         };
                       }),
                     ]}
@@ -1088,15 +1122,17 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   </label>
                   <FloatingSelect
                     value={specialtyId}
-                    onChange={(val) => setSpecialtyId(val)}
+                    onChange={(selectedSpecialtyId) =>
+                      setSpecialtyId(selectedSpecialtyId)
+                    }
                     placeholder="None / General Clinical"
                     matchWidth
                     className="w-full text-xs"
                     options={[
                       { value: "", label: "None / General Clinical" },
-                      ...specialties.map((spec) => ({
-                        value: spec.id,
-                        label: spec.name,
+                      ...specialties.map((specialtyItem) => ({
+                        value: specialtyItem.id,
+                        label: specialtyItem.name,
                       })),
                     ]}
                   />
@@ -1109,7 +1145,9 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   <input
                     type="text"
                     value={shortDescription}
-                    onChange={(e) => setShortDescription(e.target.value)}
+                    onChange={(changeEvent) =>
+                      setShortDescription(changeEvent.target.value)
+                    }
                     placeholder="Brief clinical summary shown on catalog cards..."
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2E7D5B]"
                   />
@@ -1122,7 +1160,9 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   <textarea
                     rows={3}
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={(changeEvent) =>
+                      setDescription(changeEvent.target.value)
+                    }
                     placeholder="Detailed engineering, material, and surgical application overview..."
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2E7D5B]"
                   />
@@ -1135,7 +1175,9 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   <input
                     type="text"
                     value={leadTime}
-                    onChange={(e) => setLeadTime(e.target.value)}
+                    onChange={(changeEvent) =>
+                      setLeadTime(changeEvent.target.value)
+                    }
                     placeholder="In Stock — Dispatched within 24 hours"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2E7D5B]"
                   />
@@ -1149,8 +1191,8 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                     type="number"
                     min={1}
                     value={minOrderQuantity}
-                    onChange={(e) =>
-                      setMinOrderQuantity(Number(e.target.value) || 1)
+                    onChange={(changeEvent) =>
+                      setMinOrderQuantity(Number(changeEvent.target.value) || 1)
                     }
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2E7D5B]"
                   />
@@ -1163,7 +1205,9 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   <input
                     type="checkbox"
                     checked={inStock}
-                    onChange={(e) => setInStock(e.target.checked)}
+                    onChange={(changeEvent) =>
+                      setInStock(changeEvent.target.checked)
+                    }
                     className="rounded text-[#2E7D5B]"
                   />
                   <span className="font-semibold text-gray-800">
@@ -1175,7 +1219,9 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   <input
                     type="checkbox"
                     checked={isFeatured}
-                    onChange={(e) => setIsFeatured(e.target.checked)}
+                    onChange={(changeEvent) =>
+                      setIsFeatured(changeEvent.target.checked)
+                    }
                     className="rounded text-[#2E7D5B]"
                   />
                   <span className="font-semibold text-gray-800">
@@ -1187,7 +1233,9 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   <input
                     type="checkbox"
                     checked={isActive}
-                    onChange={(e) => setIsActive(e.target.checked)}
+                    onChange={(changeEvent) =>
+                      setIsActive(changeEvent.target.checked)
+                    }
                     className="rounded text-[#2E7D5B]"
                   />
                   <span className="font-semibold text-gray-800">
@@ -1209,10 +1257,10 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                         key={preset}
                         type="button"
                         onClick={() =>
-                          setCompliance((prev) =>
+                          setCompliance((previousCompliance) =>
                             active
-                              ? prev.filter((item) => item !== preset)
-                              : [...prev, preset],
+                              ? previousCompliance.filter((item) => item !== preset)
+                              : [...previousCompliance, preset],
                           )
                         }
                         className={`px-3 py-1 rounded-full text-[11px] font-semibold border transition cursor-pointer ${
@@ -1230,7 +1278,9 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   <input
                     type="text"
                     value={customCompliance}
-                    onChange={(e) => setCustomCompliance(e.target.value)}
+                    onChange={(changeEvent) =>
+                      setCustomCompliance(changeEvent.target.value)
+                    }
                     placeholder="Add custom standard (e.g. SONCAP)..."
                     className="flex-1 px-3 py-2 rounded-xl border border-gray-200"
                   />
@@ -1241,8 +1291,8 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                         customCompliance.trim() &&
                         !compliance.includes(customCompliance.trim())
                       ) {
-                        setCompliance((prev) => [
-                          ...prev,
+                        setCompliance((previousCompliance) => [
+                          ...previousCompliance,
                           customCompliance.trim(),
                         ]);
                         setCustomCompliance("");
@@ -1279,7 +1329,10 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                     <button
                       type="button"
                       onClick={() =>
-                        setSpecRows((prev) => [...prev, { key: "", value: "" }])
+                        setSpecRows((previousRows) => [
+                          ...previousRows,
+                          { key: "", value: "" },
+                        ])
                       }
                       className="text-[#2E7D5B] font-bold hover:underline cursor-pointer"
                     >
@@ -1288,15 +1341,17 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  {specRows.map((row, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
+                  {specRows.map((specificationRow, rowIndex) => (
+                    <div key={rowIndex} className="flex items-center gap-2">
                       <input
                         type="text"
-                        value={row.key}
-                        onChange={(e) =>
-                          setSpecRows((prev) =>
-                            prev.map((r, i) =>
-                              i === idx ? { ...r, key: e.target.value } : r,
+                        value={specificationRow.key}
+                        onChange={(changeEvent) =>
+                          setSpecRows((previousRows) =>
+                            previousRows.map((rowItem, itemIndex) =>
+                              itemIndex === rowIndex
+                                ? { ...rowItem, key: changeEvent.target.value }
+                                : rowItem,
                             ),
                           )
                         }
@@ -1305,11 +1360,13 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                       />
                       <input
                         type="text"
-                        value={row.value}
-                        onChange={(e) =>
-                          setSpecRows((prev) =>
-                            prev.map((r, i) =>
-                              i === idx ? { ...r, value: e.target.value } : r,
+                        value={specificationRow.value}
+                        onChange={(changeEvent) =>
+                          setSpecRows((previousRows) =>
+                            previousRows.map((rowItem, itemIndex) =>
+                              itemIndex === rowIndex
+                                ? { ...rowItem, value: changeEvent.target.value }
+                                : rowItem,
                             ),
                           )
                         }
@@ -1319,8 +1376,10 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                       <button
                         type="button"
                         onClick={() =>
-                          setSpecRows((prev) =>
-                            prev.filter((_, i) => i !== idx),
+                          setSpecRows((previousRows) =>
+                            previousRows.filter(
+                              (_, itemIndex) => itemIndex !== rowIndex,
+                            ),
                           )
                         }
                         className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg"
@@ -1355,19 +1414,23 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                 </div>
 
                 <div className="space-y-2 mb-2">
-                  {imageUrls.map((url, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
+                  {imageUrls.map((imageUrl, imageIndex) => (
+                    <div key={imageIndex} className="flex items-center gap-2">
                       <img
-                        src={url}
+                        src={imageUrl}
                         alt=""
                         className="w-8 h-8 rounded-lg object-cover border border-gray-200 shrink-0"
                       />
                       <input
                         type="url"
-                        value={url}
-                        onChange={(e) =>
-                          setImageUrls((prev) =>
-                            prev.map((u, i) => (i === idx ? e.target.value : u)),
+                        value={imageUrl}
+                        onChange={(changeEvent) =>
+                          setImageUrls((previousUrls) =>
+                            previousUrls.map((urlItem, itemIndex) =>
+                              itemIndex === imageIndex
+                                ? changeEvent.target.value
+                                : urlItem,
+                            ),
                           )
                         }
                         className="flex-1 px-3 py-2 rounded-xl border border-gray-200 font-mono text-[11px]"
@@ -1376,8 +1439,10 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                         <button
                           type="button"
                           onClick={() =>
-                            setImageUrls((prev) =>
-                              prev.filter((_, i) => i !== idx),
+                            setImageUrls((previousUrls) =>
+                              previousUrls.filter(
+                                (_, itemIndex) => itemIndex !== imageIndex,
+                              ),
                             )
                           }
                           className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg"
@@ -1393,7 +1458,9 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   <input
                     type="url"
                     value={newImageUrl}
-                    onChange={(e) => setNewImageUrl(e.target.value)}
+                    onChange={(changeEvent) =>
+                      setNewImageUrl(changeEvent.target.value)
+                    }
                     placeholder="Paste additional image URL (https://...)"
                     className="flex-1 px-3 py-2 rounded-xl border border-gray-200"
                   />
@@ -1401,7 +1468,10 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                     type="button"
                     onClick={() => {
                       if (newImageUrl.trim()) {
-                        setImageUrls((prev) => [...prev, newImageUrl.trim()]);
+                        setImageUrls((previousUrls) => [
+                          ...previousUrls,
+                          newImageUrl.trim(),
+                        ]);
                         setNewImageUrl("");
                       }
                     }}
@@ -1498,16 +1568,16 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ onToast }) => {
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     {Object.entries(viewingProduct.specifications).map(
-                      ([key, val]) => (
+                      ([specificationKey, specificationValue]) => (
                         <div
-                          key={key}
+                          key={specificationKey}
                           className="flex justify-between p-2.5 rounded-xl bg-gray-50 border border-gray-100"
                         >
                           <span className="text-gray-500 font-medium">
-                            {key}
+                            {specificationKey}
                           </span>
                           <span className="text-gray-900 font-bold">
-                            {String(val)}
+                            {String(specificationValue)}
                           </span>
                         </div>
                       ),

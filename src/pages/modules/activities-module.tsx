@@ -85,49 +85,56 @@ export const ActivitiesModule: React.FC = () => {
     const items: FullActivityDetailItem[] = [];
 
     // 1. Live Quote Inquiries
-    (quotesRes?.items ?? analytics?.quotes?.recent ?? []).forEach((q: any) => {
-      const statusLabel: FullActivityDetailItem["status"] =
-        q.status === "FULFILLED"
-          ? "Completed"
-          : q.status === "NEW"
-            ? "Pending Review"
-            : "In Progress";
+    (quotesRes?.items ?? analytics?.quotes?.recent ?? []).forEach(
+      (quoteItem: any) => {
+        const statusLabel: FullActivityDetailItem["status"] =
+          quoteItem.status === "FULFILLED"
+            ? "Completed"
+            : quoteItem.status === "NEW"
+              ? "Pending Review"
+              : "In Progress";
 
-      items.push({
-        id: `quote-${q.id}`,
-        title: `Hospital RFQ Inquiry — ${q.reference}`,
-        description: `Quotation request submitted by ${q.customerName} for ${
-          q.hospitalClinic || q.hospitalName || "Direct Clinical Facility"
-        } (${q.items?.length ?? 1} surgical item(s), priority: ${q.priority}).`,
-        module: "Quotes",
-        reference: q.reference,
-        actorName: q.customerName,
-        actorRole: q.assignedTo?.fullName
-          ? `Assigned: ${q.assignedTo.fullName}`
-          : "Hospital Procurement",
-        facilityOrTarget:
-          q.hospitalClinic ||
-          q.hospitalName ||
-          q.location ||
-          "Nigeria Medical Facility",
-        status: statusLabel,
-        createdAt: q.createdAt || new Date().toISOString(),
-        formattedDate: formatLiveDate(q.createdAt, true),
-        targetPath: `${basePortalPath}/quotes?reference=${encodeURIComponent(
-          q.reference
-        )}`,
-        metadata: {
-          Reference: q.reference,
-          Customer: q.customerName,
-          Phone: q.customerPhone || "N/A",
-          Hospital: q.hospitalClinic || q.hospitalName || "Direct Facility",
-          Location: q.location || "Nigeria",
-          Priority: q.priority,
-          WorkflowStatus: q.status,
-          ItemsRequested: q.items?.length ?? 1,
-        },
-      });
-    });
+        items.push({
+          id: `quote-${quoteItem.id}`,
+          title: `Hospital RFQ Inquiry — ${quoteItem.reference}`,
+          description: `Quotation request submitted by ${quoteItem.customerName} for ${
+            quoteItem.hospitalClinic ||
+            quoteItem.hospitalName ||
+            "Direct Clinical Facility"
+          } (${quoteItem.items?.length ?? 1} surgical item(s), priority: ${quoteItem.priority}).`,
+          module: "Quotes",
+          reference: quoteItem.reference,
+          actorName: quoteItem.customerName,
+          actorRole: quoteItem.assignedTo?.fullName
+            ? `Assigned: ${quoteItem.assignedTo.fullName}`
+            : "Hospital Procurement",
+          facilityOrTarget:
+            quoteItem.hospitalClinic ||
+            quoteItem.hospitalName ||
+            quoteItem.location ||
+            "Nigeria Medical Facility",
+          status: statusLabel,
+          createdAt: quoteItem.createdAt || new Date().toISOString(),
+          formattedDate: formatLiveDate(quoteItem.createdAt, true),
+          targetPath: `${basePortalPath}/quotes?reference=${encodeURIComponent(
+            quoteItem.reference,
+          )}`,
+          metadata: {
+            Reference: quoteItem.reference,
+            Customer: quoteItem.customerName,
+            Phone: quoteItem.customerPhone || "N/A",
+            Hospital:
+              quoteItem.hospitalClinic ||
+              quoteItem.hospitalName ||
+              "Direct Facility",
+            Location: quoteItem.location || "Nigeria",
+            Priority: quoteItem.priority,
+            WorkflowStatus: quoteItem.status,
+            ItemsRequested: quoteItem.items?.length ?? 1,
+          },
+        });
+      },
+    );
 
     // 2. Live Audit Events (if available)
     (analytics?.audit?.recentEvents ?? []).forEach((ev: any) => {
@@ -172,86 +179,93 @@ export const ActivitiesModule: React.FC = () => {
     });
 
     // 3. Live Catalog Product Updates
-    (productsRes?.items ?? []).slice(0, 12).forEach((prod) => {
+    (productsRes?.items ?? []).slice(0, 12).forEach((productItem) => {
       items.push({
-        id: `prod-${prod.id}`,
-        title: `Catalog SKU Synced — ${prod.name}`,
-        description: `Surgical instrument "${prod.name}" (SKU: ${
-          prod.sku || "N/A"
+        id: `prod-${productItem.id}`,
+        title: `Catalog SKU Synced — ${productItem.name}`,
+        description: `Surgical instrument "${productItem.name}" (SKU: ${
+          productItem.sku || "N/A"
         }) verified in "${
-          prod.category?.name || "General"
+          productItem.category?.name || "General"
         }" category. Stock status: ${
-          prod.inStock ? "In Stock" : "Out of Stock"
+          productItem.inStock ? "In Stock" : "Out of Stock"
         }.`,
         module: "Products",
-        reference: prod.sku || prod.slug.slice(0, 12).toUpperCase(),
+        reference: productItem.sku || productItem.slug.slice(0, 12).toUpperCase(),
         actorName: "Catalog Operations",
         actorRole: userRole,
-        facilityOrTarget: prod.category?.name || "Surgical Catalog",
-        status: prod.inStock ? "Completed" : "In Progress",
+        facilityOrTarget: productItem.category?.name || "Surgical Catalog",
+        status: productItem.inStock ? "Completed" : "In Progress",
         createdAt:
-          prod.updatedAt || prod.createdAt || new Date().toISOString(),
-        formattedDate: formatLiveDate(prod.updatedAt || prod.createdAt, true),
+          productItem.updatedAt || productItem.createdAt || new Date().toISOString(),
+        formattedDate: formatLiveDate(
+          productItem.updatedAt || productItem.createdAt,
+          true,
+        ),
         targetPath: `${basePortalPath}/products`,
         metadata: {
-          ProductName: prod.name,
-          SKU: prod.sku || "N/A",
-          Category: prod.category?.name || "Uncategorized",
-          Specialty: prod.specialty?.name || "General Clinical",
-          InStock: prod.inStock ? "Yes" : "No",
-          LeadTime: prod.leadTime || "Immediate Dispatch",
-          MOQ: prod.minOrderQuantity ?? 1,
+          ProductName: productItem.name,
+          SKU: productItem.sku || "N/A",
+          Category: productItem.category?.name || "Uncategorized",
+          Specialty: productItem.specialty?.name || "General Clinical",
+          InStock: productItem.inStock ? "Yes" : "No",
+          LeadTime: productItem.leadTime || "Immediate Dispatch",
+          MOQ: productItem.minOrderQuantity ?? 1,
         },
       });
     });
 
     // 4. Categories & Specialties
-    categories.slice(0, 5).forEach((cat) => {
+    categories.slice(0, 5).forEach((categoryItem) => {
       items.push({
-        id: `cat-${cat.id}`,
-        title: `Surgical Category Active — ${cat.name}`,
-        description: `Taxonomy group "${cat.name}" (/catalog?category=${
-          cat.slug
-        }) with ${cat._count?.products ?? 0} linked surgical SKUs.`,
+        id: `cat-${categoryItem.id}`,
+        title: `Surgical Category Active — ${categoryItem.name}`,
+        description: `Taxonomy group "${categoryItem.name}" (/catalog?category=${
+          categoryItem.slug
+        }) with ${categoryItem._count?.products ?? 0} linked surgical SKUs.`,
         module: "Categories",
-        reference: `CAT-${cat.slug.slice(0, 8).toUpperCase()}`,
+        reference: `CAT-${categoryItem.slug.slice(0, 8).toUpperCase()}`,
         actorName: "Taxonomy Manager",
         actorRole: userRole,
-        facilityOrTarget: `${cat._count?.products ?? 0} Linked SKUs`,
+        facilityOrTarget: `${categoryItem._count?.products ?? 0} Linked SKUs`,
         status: "Completed",
-        createdAt: cat.updatedAt || cat.createdAt || new Date().toISOString(),
-        formattedDate: formatLiveDate(cat.updatedAt || cat.createdAt, true),
+        createdAt:
+          categoryItem.updatedAt || categoryItem.createdAt || new Date().toISOString(),
+        formattedDate: formatLiveDate(
+          categoryItem.updatedAt || categoryItem.createdAt,
+          true,
+        ),
         targetPath: `${basePortalPath}/categories`,
         metadata: {
-          CategoryName: cat.name,
-          Slug: cat.slug,
-          DisplayOrder: cat.displayOrder ?? 0,
-          LinkedProducts: cat._count?.products ?? 0,
-          Active: cat.isActive ? "Yes" : "No",
+          CategoryName: categoryItem.name,
+          Slug: categoryItem.slug,
+          DisplayOrder: categoryItem.displayOrder ?? 0,
+          LinkedProducts: categoryItem._count?.products ?? 0,
+          Active: categoryItem.isActive ? "Yes" : "No",
         },
       });
     });
 
-    specialties.slice(0, 4).forEach((spec) => {
+    specialties.slice(0, 4).forEach((specialtyItem) => {
       items.push({
-        id: `spec-${spec.id}`,
-        title: `Medical Specialty Configured — ${spec.name}`,
-        description: `Clinical department "${spec.name}" mapped to ${
-          spec._count?.products ?? 0
+        id: `spec-${specialtyItem.id}`,
+        title: `Medical Specialty Configured — ${specialtyItem.name}`,
+        description: `Clinical department "${specialtyItem.name}" mapped to ${
+          specialtyItem._count?.products ?? 0
         } surgical instruments.`,
         module: "Specialties",
-        reference: `SPEC-${spec.slug.slice(0, 8).toUpperCase()}`,
+        reference: `SPEC-${specialtyItem.slug.slice(0, 8).toUpperCase()}`,
         actorName: "Clinical Taxonomy",
         actorRole: userRole,
-        facilityOrTarget: spec.name,
+        facilityOrTarget: specialtyItem.name,
         status: "Completed",
-        createdAt: spec.createdAt || new Date().toISOString(),
-        formattedDate: formatLiveDate(spec.createdAt, true),
+        createdAt: specialtyItem.createdAt || new Date().toISOString(),
+        formattedDate: formatLiveDate(specialtyItem.createdAt, true),
         targetPath: `${basePortalPath}/specialties`,
         metadata: {
-          SpecialtyName: spec.name,
-          Slug: spec.slug,
-          LinkedProducts: spec._count?.products ?? 0,
+          SpecialtyName: specialtyItem.name,
+          Slug: specialtyItem.slug,
+          LinkedProducts: specialtyItem._count?.products ?? 0,
         },
       });
     });
@@ -268,33 +282,35 @@ export const ActivitiesModule: React.FC = () => {
   ]);
 
   const filteredActivities = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const searchQuery = search.trim().toLowerCase();
     return allActivities
       .filter((item) => {
         if (moduleFilter !== "All" && item.module !== moduleFilter)
           return false;
         if (statusFilter !== "All" && item.status !== statusFilter)
           return false;
-        if (!q) return true;
+        if (!searchQuery) return true;
         return (
-          item.title.toLowerCase().includes(q) ||
-          item.description.toLowerCase().includes(q) ||
-          item.reference.toLowerCase().includes(q) ||
-          item.actorName.toLowerCase().includes(q) ||
-          item.facilityOrTarget.toLowerCase().includes(q)
+          item.title.toLowerCase().includes(searchQuery) ||
+          item.description.toLowerCase().includes(searchQuery) ||
+          item.reference.toLowerCase().includes(searchQuery) ||
+          item.actorName.toLowerCase().includes(searchQuery) ||
+          item.facilityOrTarget.toLowerCase().includes(searchQuery)
         );
       })
-      .sort((a, b) => {
+      .sort((firstActivity, secondActivity) => {
         if (sortBy === "module_asc") {
-          return a.module.localeCompare(b.module);
+          return firstActivity.module.localeCompare(secondActivity.module);
         }
         if (sortBy === "oldest") {
           return (
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            new Date(firstActivity.createdAt).getTime() -
+            new Date(secondActivity.createdAt).getTime()
           );
         }
         return (
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(secondActivity.createdAt).getTime() -
+          new Date(firstActivity.createdAt).getTime()
         );
       });
   }, [allActivities, search, moduleFilter, statusFilter, sortBy]);
@@ -356,7 +372,7 @@ export const ActivitiesModule: React.FC = () => {
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(changeEvent) => setSearch(changeEvent.target.value)}
             placeholder="Search operations by reference, actor, facility, or SKU..."
             className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-[#2E7D5B]"
           />
@@ -364,7 +380,7 @@ export const ActivitiesModule: React.FC = () => {
 
         <FloatingSelect
           value={moduleFilter}
-          onChange={(val) => setModuleFilter(val)}
+          onChange={(selectedValue) => setModuleFilter(selectedValue)}
           menuTitle="Filter by Module"
           icon={<Filter className="w-3.5 h-3.5" />}
           isActiveFilter={moduleFilter !== "All"}
@@ -406,7 +422,7 @@ export const ActivitiesModule: React.FC = () => {
 
         <FloatingSelect
           value={statusFilter}
-          onChange={(val) => setStatusFilter(val)}
+          onChange={(selectedValue) => setStatusFilter(selectedValue)}
           menuTitle="Filter by Status"
           icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
           isActiveFilter={statusFilter !== "All"}
@@ -438,8 +454,8 @@ export const ActivitiesModule: React.FC = () => {
 
         <FloatingSelect
           value={sortBy}
-          onChange={(val) =>
-            setSortBy(val as "newest" | "oldest" | "module_asc")
+          onChange={(selectedValue) =>
+            setSortBy(selectedValue as "newest" | "oldest" | "module_asc")
           }
           menuTitle="Sort Operations"
           icon={<ArrowUpDown className="w-3.5 h-3.5" />}

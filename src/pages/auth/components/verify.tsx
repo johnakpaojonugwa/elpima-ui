@@ -17,8 +17,8 @@ export const OtpVerificationPage: React.FC<OtpVerificationPageProps> = ({
   onBack,
   otpLength = 6,
 }) => {
-  const verify2FA = useAuthStore((s) => s.verify2FA);
-  const tempToken = useAuthStore((s) => s.tempToken);
+  const verify2FA = useAuthStore((state) => state.verify2FA);
+  const tempToken = useAuthStore((state) => state.tempToken);
 
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
@@ -32,7 +32,7 @@ export const OtpVerificationPage: React.FC<OtpVerificationPageProps> = ({
   useEffect(() => {
     if (secondsLeft <= 0) return;
     const interval = setInterval(() => {
-      setSecondsLeft((prev) => Math.max(0, prev - 1));
+      setSecondsLeft((previousSeconds) => Math.max(0, previousSeconds - 1));
     }, 1000);
     return () => clearInterval(interval);
   }, [secondsLeft]);
@@ -134,8 +134,8 @@ export const OtpVerificationPage: React.FC<OtpVerificationPageProps> = ({
         <OtpInput
           length={otpLength}
           value={otp}
-          onChange={(newVal) => {
-            setOtp(newVal);
+          onChange={(newOtpValue) => {
+            setOtp(newOtpValue);
             if (error) setError("");
           }}
           error={error}

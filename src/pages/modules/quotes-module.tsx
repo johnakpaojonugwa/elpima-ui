@@ -138,7 +138,8 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
     const refParam = searchParams.get("reference");
     if (refParam && rawQuotes.length > 0 && !selectedQuote) {
       const matched = rawQuotes.find(
-        (q) => q.reference.toLowerCase() === refParam.toLowerCase(),
+        (quoteItem) =>
+          quoteItem.reference.toLowerCase() === refParam.toLowerCase(),
       );
       if (matched) {
         openQuoteModal(matched);
@@ -153,8 +154,8 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
     setAssignedManagerId(quote.assignedToId ?? quote.assignedTo?.id ?? "");
   };
 
-  const handleSaveStatusAndNotes = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveStatusAndNotes = async (submitEvent: React.FormEvent) => {
+    submitEvent.preventDefault();
     if (!selectedQuote) return;
     try {
       const updated = await updateStatus.mutateAsync({
@@ -164,10 +165,10 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
           adminNotes: adminNotesInput.trim() || undefined,
         },
       });
-      setSelectedQuote((prev) =>
-        prev
+      setSelectedQuote((previousQuote) =>
+        previousQuote
           ? {
-              ...prev,
+              ...previousQuote,
               status: updated?.status ?? statusInput,
               adminNotes: updated?.adminNotes ?? adminNotesInput,
             }
@@ -176,8 +177,10 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
       onToast?.(
         `Quote ${selectedQuote.reference} updated to ${statusInput}`,
       );
-    } catch (err: any) {
-      onToast?.(err?.normalizedMessage || "Failed to update quote status");
+    } catch (mutationError: any) {
+      onToast?.(
+        mutationError?.normalizedMessage || "Failed to update quote status",
+      );
     }
   };
 
@@ -188,21 +191,25 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
         id: selectedQuote.id,
         payload: { assignedToId: assignedManagerId },
       });
-      const managerObj = managers.find((m) => m.id === assignedManagerId);
-      setSelectedQuote((prev) =>
-        prev
+      const managerObj = managers.find(
+        (managerItem) => managerItem.id === assignedManagerId,
+      );
+      setSelectedQuote((previousQuote) =>
+        previousQuote
           ? {
-              ...prev,
+              ...previousQuote,
               assignedToId: assignedManagerId,
               assignedTo: managerObj
                 ? { id: managerObj.id, fullName: managerObj.fullName }
-                : prev.assignedTo,
+                : previousQuote.assignedTo,
             }
           : null,
       );
       onToast?.(`Assigned quote ${selectedQuote.reference} to manager`);
-    } catch (err: any) {
-      onToast?.(err?.normalizedMessage || "Failed to assign manager");
+    } catch (mutationError: any) {
+      onToast?.(
+        mutationError?.normalizedMessage || "Failed to assign manager",
+      );
     }
   };
 
@@ -213,13 +220,13 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
         setSelectedQuote(null);
       }
       onToast?.(`Deleted quote ${quote.reference}`);
-    } catch (err: any) {
-      onToast?.(err?.normalizedMessage || "Failed to delete quote");
+    } catch (mutationError: any) {
+      onToast?.(mutationError?.normalizedMessage || "Failed to delete quote");
     }
   };
 
-  const handleCreateWalkInQuote = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateWalkInQuote = async (submitEvent: React.FormEvent) => {
+    submitEvent.preventDefault();
     setCreateError("");
     const targetProductId = selectedProductId || availableProducts[0]?.id;
     if (!targetProductId) {
@@ -232,7 +239,7 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
     }
 
     try {
-      const res = await createQuote.mutateAsync({
+      const quoteResponse = await createQuote.mutateAsync({
         payload: {
           customerName: customerName.trim(),
           customerPhone: customerPhone.trim(),
@@ -254,10 +261,10 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
       setCustomerEmail("");
       setHospitalClinic("");
       setCustomerNotes("");
-      onToast?.(`Created RFQ ${res.reference}`);
-    } catch (err: any) {
+      onToast?.(`Created RFQ ${quoteResponse.reference}`);
+    } catch (mutationError: any) {
       setCreateError(
-        err?.normalizedMessage ||
+        mutationError?.normalizedMessage ||
           err?.response?.data?.message ||
           "Failed to create quote request.",
       );
@@ -348,7 +355,7 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
             label: "New RFQs",
             val:
               statsOverview?.NEW ??
-              rawQuotes.filter((q) => q.status === "NEW").length,
+              rawQuotes.filter((quoteItem) => quoteItem.status === "NEW").length,
             filter: "NEW",
             tone: "text-sky-700",
           },
@@ -356,7 +363,7 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
             label: "Contacted",
             val:
               statsOverview?.CONTACTED ??
-              rawQuotes.filter((q) => q.status === "CONTACTED").length,
+              rawQuotes.filter((quoteItem) => quoteItem.status === "CONTACTED").length,
             filter: "CONTACTED",
             tone: "text-amber-700",
           },
@@ -364,7 +371,7 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
             label: "Quoted",
             val:
               statsOverview?.QUOTED ??
-              rawQuotes.filter((q) => q.status === "QUOTED").length,
+              rawQuotes.filter((quoteItem) => quoteItem.status === "QUOTED").length,
             filter: "QUOTED",
             tone: "text-indigo-700",
           },
@@ -372,7 +379,7 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
             label: "Fulfilled",
             val:
               statsOverview?.FULFILLED ??
-              rawQuotes.filter((q) => q.status === "FULFILLED").length,
+              rawQuotes.filter((quoteItem) => quoteItem.status === "FULFILLED").length,
             filter: "FULFILLED",
             tone: "text-emerald-700",
           },
@@ -380,7 +387,7 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
             label: "Urgent Pending",
             val:
               statsOverview?.urgentPending ??
-              rawQuotes.filter((q) => q.priority === "URGENT").length,
+              rawQuotes.filter((quoteItem) => quoteItem.priority === "URGENT").length,
             filter: "URGENT_PRIORITY",
             tone: "text-rose-600",
           },
@@ -390,7 +397,9 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
             type="button"
             onClick={() => {
               if (card.filter === "URGENT_PRIORITY") {
-                setPriorityFilter((p) => (p === "URGENT" ? "" : "URGENT"));
+                setPriorityFilter((currentPriority) =>
+                  currentPriority === "URGENT" ? "" : "URGENT",
+                );
               } else {
                 setStatusFilter(card.filter);
               }
@@ -420,8 +429,8 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
           <input
             type="text"
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
+            onChange={(changeEvent) => {
+              setSearch(changeEvent.target.value);
               if (searchParams.get("reference")) {
                 setSearchParams({});
               }
@@ -434,8 +443,8 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
 
         <FloatingSelect
           value={statusFilter}
-          onChange={(val) => {
-            setStatusFilter(val);
+          onChange={(selectedValue) => {
+            setStatusFilter(selectedValue);
             setPage(1);
           }}
           menuTitle="Filter by RFQ Status"
@@ -479,8 +488,8 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
 
         <FloatingSelect
           value={priorityFilter}
-          onChange={(val) => {
-            setPriorityFilter(val);
+          onChange={(selectedValue) => {
+            setPriorityFilter(selectedValue);
             setPage(1);
           }}
           menuTitle="Filter by Priority"
@@ -509,7 +518,7 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
 
         <FloatingSelect
           value={sortBy}
-          onChange={(val) => setSortBy(val as any)}
+          onChange={(selectedValue) => setSortBy(selectedValue as any)}
           menuTitle="Sort Quotes"
           icon={<ArrowUpDown className="w-3.5 h-3.5" />}
           isActiveFilter={sortBy !== "newest"}
@@ -682,7 +691,9 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
               <button
                 type="button"
                 disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() =>
+                  setPage((previousPage) => Math.max(1, previousPage - 1))
+                }
                 className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white font-semibold disabled:opacity-40"
               >
                 Previous
@@ -690,7 +701,7 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
               <button
                 type="button"
                 disabled={page >= (meta.totalPages ?? meta.pages ?? 1)}
-                onClick={() => setPage((p) => p + 1)}
+                onClick={() => setPage((previousPage) => previousPage + 1)}
                 className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white font-semibold disabled:opacity-40"
               >
                 Next
@@ -835,16 +846,18 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
                   <div className="flex-1">
                     <FloatingSelect
                       value={assignedManagerId}
-                      onChange={(val) => setAssignedManagerId(val)}
+                      onChange={(selectedManagerId) =>
+                        setAssignedManagerId(selectedManagerId)
+                      }
                       placeholder="Select Supervising Manager..."
                       matchWidth
                       className="w-full text-xs"
                       options={[
                         { value: "", label: "Select Supervising Manager..." },
-                        ...managers.map((m) => ({
-                          value: m.id,
-                          label: m.fullName,
-                          description: m.email,
+                        ...managers.map((managerItem) => ({
+                          value: managerItem.id,
+                          label: managerItem.fullName,
+                          description: managerItem.email,
                         })),
                       ]}
                     />
@@ -874,7 +887,9 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
                   </label>
                   <FloatingSelect
                     value={statusInput}
-                    onChange={(val) => setStatusInput(val as QuoteStatus)}
+                    onChange={(selectedStatus) =>
+                      setStatusInput(selectedStatus as QuoteStatus)
+                    }
                     matchWidth
                     className="w-full text-xs"
                     options={[
@@ -895,7 +910,9 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
                 <textarea
                   rows={3}
                   value={adminNotesInput}
-                  onChange={(e) => setAdminNotesInput(e.target.value)}
+                  onChange={(changeEvent) =>
+                    setAdminNotesInput(changeEvent.target.value)
+                  }
                   placeholder="Record agreed pricing, proforma invoice number, or delivery schedule..."
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200"
                 />
@@ -962,7 +979,9 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
                   <input
                     type="text"
                     value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
+                    onChange={(changeEvent) =>
+                      setCustomerName(changeEvent.target.value)
+                    }
                     placeholder="Dr. Tunde Bakare"
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200"
                     required
@@ -975,7 +994,9 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
                   <input
                     type="text"
                     value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    onChange={(changeEvent) =>
+                      setCustomerPhone(changeEvent.target.value)
+                    }
                     placeholder="+2348030000000"
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200"
                     required
@@ -991,7 +1012,9 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
                   <input
                     type="text"
                     value={hospitalClinic}
-                    onChange={(e) => setHospitalClinic(e.target.value)}
+                    onChange={(changeEvent) =>
+                      setHospitalClinic(changeEvent.target.value)
+                    }
                     placeholder="Reddington Multi-Specialist Hospital"
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200"
                   />
@@ -1003,7 +1026,9 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
                   <input
                     type="text"
                     value={location}
-                    onChange={(e) => setLocation(e.target.value)}
+                    onChange={(changeEvent) =>
+                      setLocation(changeEvent.target.value)
+                    }
                     placeholder="Victoria Island, Lagos"
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200"
                   />
@@ -1018,7 +1043,9 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
                   <input
                     type="email"
                     value={customerEmail}
-                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    onChange={(changeEvent) =>
+                      setCustomerEmail(changeEvent.target.value)
+                    }
                     placeholder="procurement@hospital.com"
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200"
                   />
@@ -1029,7 +1056,9 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
                   </label>
                   <FloatingSelect
                     value={priority}
-                    onChange={(val) => setPriority(val as QuotePriority)}
+                    onChange={(selectedPriority) =>
+                      setPriority(selectedPriority as QuotePriority)
+                    }
                     matchWidth
                     className="w-full text-xs"
                     options={[
@@ -1047,14 +1076,16 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
                   </label>
                   <FloatingSelect
                     value={selectedProductId}
-                    onChange={(val) => setSelectedProductId(val)}
+                    onChange={(productId) => setSelectedProductId(productId)}
                     placeholder="Select surgical product..."
                     matchWidth
                     className="w-full text-xs"
-                    options={availableProducts.map((prod) => ({
-                      value: prod.id,
-                      label: prod.name,
-                      description: prod.sku ? `SKU: ${prod.sku}` : undefined,
+                    options={availableProducts.map((productItem) => ({
+                      value: productItem.id,
+                      label: productItem.name,
+                      description: productItem.sku
+                        ? `SKU: ${productItem.sku}`
+                        : undefined,
                     }))}
                   />
                 </div>
@@ -1066,8 +1097,8 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
                     type="number"
                     min={1}
                     value={selectedQty}
-                    onChange={(e) =>
-                      setSelectedQty(Number(e.target.value) || 1)
+                    onChange={(changeEvent) =>
+                      setSelectedQty(Number(changeEvent.target.value) || 1)
                     }
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200"
                     required
@@ -1082,7 +1113,9 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
                 <textarea
                   rows={2}
                   value={customerNotes}
-                  onChange={(e) => setCustomerNotes(e.target.value)}
+                  onChange={(changeEvent) =>
+                    setCustomerNotes(changeEvent.target.value)
+                  }
                   placeholder="Include installation & theater nurse training..."
                   className="w-full px-3 py-2.5 rounded-xl border border-gray-200"
                 />

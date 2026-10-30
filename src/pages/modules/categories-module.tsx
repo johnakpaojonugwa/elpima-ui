@@ -81,34 +81,41 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
   const [isActive, setIsActive] = useState(true);
 
   const filteredCategories = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const searchQuery = search.trim().toLowerCase();
     return categories
-      .filter((cat) => {
-        if (statusFilter === "active" && !cat.isActive) return false;
-        if (statusFilter === "inactive" && cat.isActive) return false;
+      .filter((categoryItem) => {
+        if (statusFilter === "active" && !categoryItem.isActive) return false;
+        if (statusFilter === "inactive" && categoryItem.isActive) return false;
         const prefix = deriveCategoryCodePrefix(
-          cat.name,
-          cat.slug,
-          cat.description ?? undefined,
+          categoryItem.name,
+          categoryItem.slug,
+          categoryItem.description ?? undefined,
         ).toLowerCase();
         if (
-          q &&
-          !cat.name.toLowerCase().includes(q) &&
-          !cat.slug.toLowerCase().includes(q) &&
-          !prefix.includes(q) &&
-          !(cat.description ?? "").toLowerCase().includes(q)
+          searchQuery &&
+          !categoryItem.name.toLowerCase().includes(searchQuery) &&
+          !categoryItem.slug.toLowerCase().includes(searchQuery) &&
+          !prefix.includes(searchQuery) &&
+          !(categoryItem.description ?? "").toLowerCase().includes(searchQuery)
         ) {
           return false;
         }
         return true;
       })
-      .sort((a, b) => {
-        if (sortBy === "name_asc") return a.name.localeCompare(b.name);
-        if (sortBy === "name_desc") return b.name.localeCompare(a.name);
+      .sort((firstCategory, secondCategory) => {
+        if (sortBy === "name_asc")
+          return firstCategory.name.localeCompare(secondCategory.name);
+        if (sortBy === "name_desc")
+          return secondCategory.name.localeCompare(firstCategory.name);
         if (sortBy === "products_desc") {
-          return (b._count?.products ?? 0) - (a._count?.products ?? 0);
+          return (
+            (secondCategory._count?.products ?? 0) -
+            (firstCategory._count?.products ?? 0)
+          );
         }
-        return (a.displayOrder ?? 0) - (b.displayOrder ?? 0);
+        return (
+          (firstCategory.displayOrder ?? 0) - (secondCategory.displayOrder ?? 0)
+        );
       });
   }, [categories, search, statusFilter, sortBy]);
 
@@ -127,24 +134,27 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
     setIsModalOpen(true);
   };
 
-  const openEdit = (cat: Category) => {
-    setEditingCategory(cat);
+  const openEdit = (targetCategory: Category) => {
+    setEditingCategory(targetCategory);
     setFormError("");
-    setName(cat.name);
-    setSlug(cat.slug);
+    setName(targetCategory.name);
+    setSlug(targetCategory.slug);
     setCodePrefix(
       deriveCategoryCodePrefix(
-        cat.name,
-        cat.slug,
-        cat.description ?? undefined,
+        targetCategory.name,
+        targetCategory.slug,
+        targetCategory.description ?? undefined,
       ),
     );
     setDescription(
-      (cat.description ?? "").replace(/\s*\(Prefix:\s*[A-Z0-9]{3}\)/i, ""),
+      (targetCategory.description ?? "").replace(
+        /\s*\(Prefix:\s*[A-Z0-9]{3}\)/i,
+        "",
+      ),
     );
-    setDisplayOrder(cat.displayOrder ?? 0);
-    setImageUrl(cat.imageUrl ?? "");
-    setIsActive(cat.isActive);
+    setDisplayOrder(targetCategory.displayOrder ?? 0);
+    setImageUrl(targetCategory.imageUrl ?? "");
+    setIsActive(targetCategory.isActive);
     setIsModalOpen(true);
   };
 
@@ -169,8 +179,8 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
     }
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async (submitEvent: React.FormEvent) => {
+    submitEvent.preventDefault();
     setFormError("");
     if (name.trim().length < 2) {
       setFormError("Category name must be at least 2 characters.");
@@ -219,26 +229,28 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
         );
       }
       setIsModalOpen(false);
-    } catch (err: any) {
+    } catch (mutationError: any) {
       setFormError(
-        err?.normalizedMessage ||
-          err?.response?.data?.message ||
+        mutationError?.normalizedMessage ||
+          mutationError?.response?.data?.message ||
           "Failed to save category.",
       );
     }
   };
 
-  const handleToggleActive = async (cat: Category) => {
+  const handleToggleActive = async (targetCategory: Category) => {
     try {
       await updateCategory.mutateAsync({
-        id: cat.id,
-        payload: { isActive: !cat.isActive },
+        id: targetCategory.id,
+        payload: { isActive: !targetCategory.isActive },
       });
       onToast?.(
-        `Category "${cat.name}" ${!cat.isActive ? "activated" : "hidden"}`,
+        `Category "${targetCategory.name}" ${!targetCategory.isActive ? "activated" : "hidden"}`,
       );
-    } catch (err: any) {
-      onToast?.(err?.normalizedMessage || "Failed to update status");
+    } catch (mutationError: any) {
+      onToast?.(
+        mutationError?.normalizedMessage || "Failed to update status",
+      );
     }
   };
 
@@ -248,9 +260,9 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
       await deleteCategory.mutateAsync(deletingCategory.id);
       onToast?.(`Deleted category "${deletingCategory.name}"`);
       setDeletingCategory(null);
-    } catch (err: any) {
+    } catch (mutationError: any) {
       onToast?.(
-        err?.normalizedMessage ||
+        mutationError?.normalizedMessage ||
           "Cannot delete category with linked products.",
       );
       setDeletingCategory(null);
@@ -308,7 +320,7 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(changeEvent) => setSearch(changeEvent.target.value)}
             placeholder="Search categories by name, SKU prefix (END, OPN, SPC, CLS, LAP), slug..."
             className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-[#2E7D5B]"
           />
@@ -317,8 +329,8 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
         <div className="flex items-center gap-2.5">
           <FloatingSelect
             value={statusFilter}
-            onChange={(val) =>
-              setStatusFilter(val as "all" | "active" | "inactive")
+            onChange={(selectedValue) =>
+              setStatusFilter(selectedValue as "all" | "active" | "inactive")
             }
             menuTitle="Filter by Status"
             icon={<Filter className="w-3.5 h-3.5" />}
@@ -346,7 +358,7 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
 
           <FloatingSelect
             value={sortBy}
-            onChange={(val) => setSortBy(val as any)}
+            onChange={(selectedValue) => setSortBy(selectedValue as any)}
             menuTitle="Sort Categories"
             icon={<ArrowUpDown className="w-3.5 h-3.5" />}
             isActiveFilter={sortBy !== "order"}
@@ -409,19 +421,19 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
                   </td>
                 </tr>
               ) : (
-                filteredCategories.map((cat) => {
+                filteredCategories.map((categoryItem) => {
                   const prefix = deriveCategoryCodePrefix(
-                    cat.name,
-                    cat.slug,
-                    cat.description ?? undefined,
+                    categoryItem.name,
+                    categoryItem.slug,
+                    categoryItem.description ?? undefined,
                   );
                   return (
                     <tr
-                      key={cat.id}
+                      key={categoryItem.id}
                       className="hover:bg-gray-50/80 transition-colors"
                     >
                       <td className="py-3.5 pl-5 pr-3 font-mono font-bold text-gray-600">
-                        #{cat.displayOrder ?? 0}
+                        #{categoryItem.displayOrder ?? 0}
                       </td>
                       <td className="py-3.5 px-3">
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#2E7D5B]/10 text-[#2E7D5B] font-mono font-extrabold text-[11px]">
@@ -430,40 +442,44 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
                         </span>
                       </td>
                       <td className="py-3.5 px-3">
-                        <p className="font-bold text-gray-900">{cat.name}</p>
+                        <p className="font-bold text-gray-900">
+                          {categoryItem.name}
+                        </p>
                         <p className="text-[11px] font-mono text-gray-400">
-                          /{cat.slug}
+                          /{categoryItem.slug}
                         </p>
                       </td>
                       <td className="py-3.5 px-3 text-gray-600 max-w-[300px] truncate">
-                        {cat.description || "—"}
+                        {categoryItem.description || "—"}
                       </td>
                       <td className="py-3.5 px-3">
                         <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 font-bold text-[11px]">
-                          {cat._count?.products ?? 0} products
+                          {categoryItem._count?.products ?? 0} products
                         </span>
                       </td>
                       <td className="py-3.5 px-3">
                         <button
                           type="button"
-                          onClick={() => handleToggleActive(cat)}
+                          onClick={() => handleToggleActive(categoryItem)}
                           className={`px-2.5 py-1 rounded-full text-[11px] font-semibold cursor-pointer ${
-                            cat.isActive
+                            categoryItem.isActive
                               ? "bg-emerald-50 text-emerald-700"
                               : "bg-gray-100 text-gray-600"
                           }`}
                         >
-                          {cat.isActive ? "Active" : "Hidden"}
+                          {categoryItem.isActive ? "Active" : "Hidden"}
                         </button>
                       </td>
                       <td className="py-3.5 px-3 text-gray-500 whitespace-nowrap">
-                        {formatLiveDate(cat.updatedAt || cat.createdAt)}
+                        {formatLiveDate(
+                          categoryItem.updatedAt || categoryItem.createdAt,
+                        )}
                       </td>
                       <td className="py-3.5 pl-3 pr-5 text-right">
                         <div className="inline-flex items-center gap-1.5">
                           <button
                             type="button"
-                            onClick={() => openEdit(cat)}
+                            onClick={() => openEdit(categoryItem)}
                             className="p-2 rounded-lg text-sky-600 hover:bg-sky-50 cursor-pointer"
                             title="Edit Category"
                           >
@@ -472,7 +488,7 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
                           {isSuperAdmin && (
                             <button
                               type="button"
-                              onClick={() => setDeletingCategory(cat)}
+                              onClick={() => setDeletingCategory(categoryItem)}
                               className="p-2 rounded-lg text-rose-600 hover:bg-rose-50 cursor-pointer"
                               title="Delete Category"
                             >
@@ -563,7 +579,9 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
                 <input
                   type="text"
                   value={name}
-                  onChange={(e) => handleNameChange(e.target.value)}
+                  onChange={(changeEvent) =>
+                    handleNameChange(changeEvent.target.value)
+                  }
                   placeholder="e.g. Endoscopic & Powered Staplers"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2E7D5B]"
                   required
@@ -579,9 +597,11 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
                     type="text"
                     maxLength={3}
                     value={codePrefix}
-                    onChange={(e) =>
+                    onChange={(changeEvent) =>
                       setCodePrefix(
-                        e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""),
+                        changeEvent.target.value
+                          .toUpperCase()
+                          .replace(/[^A-Z0-9]/g, ""),
                       )
                     }
                     placeholder="END"
@@ -600,7 +620,9 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
                   <input
                     type="text"
                     value={slug}
-                    onChange={(e) => setSlug(e.target.value)}
+                    onChange={(changeEvent) =>
+                      setSlug(changeEvent.target.value)
+                    }
                     placeholder="endoscopic-powered-staplers"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 font-mono focus:outline-none focus:border-[#2E7D5B]"
                   />
@@ -614,8 +636,8 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
                     type="number"
                     min={0}
                     value={displayOrder}
-                    onChange={(e) =>
-                      setDisplayOrder(Number(e.target.value) || 0)
+                    onChange={(changeEvent) =>
+                      setDisplayOrder(Number(changeEvent.target.value) || 0)
                     }
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2E7D5B]"
                   />
@@ -629,7 +651,9 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
                 <textarea
                   rows={3}
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={(changeEvent) =>
+                    setDescription(changeEvent.target.value)
+                  }
                   placeholder="Minimally invasive laparoscopic, thoracoscopic, and battery-powered articulating linear cutter staplers..."
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2E7D5B]"
                 />
@@ -649,7 +673,9 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
                 <input
                   type="url"
                   value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
+                  onChange={(changeEvent) =>
+                    setImageUrl(changeEvent.target.value)
+                  }
                   placeholder="https://images.unsplash.com/..."
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2E7D5B]"
                 />
@@ -659,7 +685,9 @@ export const CategoriesModule: React.FC<CategoriesModuleProps> = ({
                 <input
                   type="checkbox"
                   checked={isActive}
-                  onChange={(e) => setIsActive(e.target.checked)}
+                  onChange={(changeEvent) =>
+                    setIsActive(changeEvent.target.checked)
+                  }
                 />
                 <span className="font-semibold text-gray-700">
                   Active & visible in public storefront

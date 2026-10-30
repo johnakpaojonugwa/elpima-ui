@@ -22,8 +22,8 @@ const QuoteRequestPage: React.FC = () => {
     whatsappLink?: string;
   } | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (submitEvent: React.FormEvent) => {
+    submitEvent.preventDefault();
     if (items.length === 0) return;
     setSubmitError("");
 
@@ -36,10 +36,10 @@ const QuoteRequestPage: React.FC = () => {
           hospitalClinic: hospitalClinic || undefined,
           location: location || undefined,
           customerNotes: customerNotes || undefined,
-          items: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            customRequirement: item.notes,
+          items: items.map((quoteBagItem) => ({
+            productId: quoteBagItem.productId,
+            quantity: quoteBagItem.quantity,
+            customRequirement: quoteBagItem.notes,
           })),
         },
       });
@@ -57,10 +57,10 @@ const QuoteRequestPage: React.FC = () => {
           // Popup blocked - user can click button on success screen
         }
       }
-    } catch (err: any) {
+    } catch (submissionError: any) {
       setSubmitError(
-        err?.normalizedMessage ||
-          err?.response?.data?.message ||
+        submissionError?.normalizedMessage ||
+          submissionError?.response?.data?.message ||
           "Failed to submit quote request. Please try again.",
       );
     }
@@ -150,20 +150,20 @@ const QuoteRequestPage: React.FC = () => {
         ) : (
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div className="divide-y divide-slate-200 rounded-xl border border-slate-200 p-4">
-              {items.map((item) => (
+              {items.map((quoteItem) => (
                 <div
-                  key={item.productId}
+                  key={quoteItem.productId}
                   className="flex items-center justify-between py-2 text-sm"
                 >
                   <div>
-                    <p className="font-medium text-slate-900">{item.name}</p>
+                    <p className="font-medium text-slate-900">{quoteItem.name}</p>
                     <p className="text-xs text-slate-500">
-                      Quantity: {item.quantity}
+                      Quantity: {quoteItem.quantity}
                     </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => removeItem(item.productId)}
+                    onClick={() => removeItem(quoteItem.productId)}
                     className="text-xs font-medium text-rose-600 hover:underline"
                   >
                     Remove
@@ -177,39 +177,51 @@ const QuoteRequestPage: React.FC = () => {
                 required
                 placeholder="Full Name *"
                 value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
+                onChange={(changeEvent) =>
+                  setCustomerName(changeEvent.target.value)
+                }
                 className="rounded-lg border border-slate-300 px-3.5 py-2 text-sm"
               />
               <input
                 required
                 placeholder="Phone / WhatsApp Number *"
                 value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
+                onChange={(changeEvent) =>
+                  setCustomerPhone(changeEvent.target.value)
+                }
                 className="rounded-lg border border-slate-300 px-3.5 py-2 text-sm"
               />
               <input
                 type="email"
                 placeholder="Email Address"
                 value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
+                onChange={(changeEvent) =>
+                  setCustomerEmail(changeEvent.target.value)
+                }
                 className="rounded-lg border border-slate-300 px-3.5 py-2 text-sm"
               />
               <input
                 placeholder="Hospital / Clinic / Organization"
                 value={hospitalClinic}
-                onChange={(e) => setHospitalClinic(e.target.value)}
+                onChange={(changeEvent) =>
+                  setHospitalClinic(changeEvent.target.value)
+                }
                 className="rounded-lg border border-slate-300 px-3.5 py-2 text-sm"
               />
               <input
                 placeholder="City / State (e.g. Lagos, Abuja)"
                 value={location}
-                onChange={(e) => setLocation(e.target.value)}
+                onChange={(changeEvent) =>
+                  setLocation(changeEvent.target.value)
+                }
                 className="rounded-lg border border-slate-300 px-3.5 py-2 text-sm sm:col-span-2"
               />
               <textarea
                 placeholder="Additional specifications or delivery notes..."
                 value={customerNotes}
-                onChange={(e) => setCustomerNotes(e.target.value)}
+                onChange={(changeEvent) =>
+                  setCustomerNotes(changeEvent.target.value)
+                }
                 rows={3}
                 className="rounded-lg border border-slate-300 px-3.5 py-2 text-sm sm:col-span-2"
               />

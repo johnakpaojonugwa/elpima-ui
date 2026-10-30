@@ -112,32 +112,37 @@ export function ControlAdminDashboardPage() {
 
   const liveStockByCategory: ControlAdminStockPoint[] = useMemo(() => {
     if (!liveCategories.length) return CONTROL_ADMIN_STOCK_BY_CATEGORY;
-    return liveCategories.slice(0, 6).map((cat) => ({
+    return liveCategories.slice(0, 6).map((categoryItem) => ({
       category:
-        cat.name.length > 18 ? `${cat.name.slice(0, 18)}…` : cat.name,
-      inStock: Math.max(1, cat._count?.products ?? 4),
+        categoryItem.name.length > 18
+          ? `${categoryItem.name.slice(0, 18)}…`
+          : categoryItem.name,
+      inStock: Math.max(1, categoryItem._count?.products ?? 4),
       lowStock: 0,
     }));
   }, [liveCategories]);
 
   const liveRecentActivities: ControlAdminRecentActivityRow[] = useMemo(() => {
-    if (!liveAnalytics?.quotes?.recent?.length && !liveAnalytics?.audit?.recentEvents?.length) {
+    if (
+      !liveAnalytics?.quotes?.recent?.length &&
+      !liveAnalytics?.audit?.recentEvents?.length
+    ) {
       return CONTROL_ADMIN_RECENT_ACTIVITIES;
     }
 
     const fromQuotes: ControlAdminRecentActivityRow[] = (
       liveAnalytics.quotes?.recent ?? []
-    ).map((q) => ({
-      id: `q-${q.id}`,
-      action: `Hospital RFQ from ${q.customerName} (${q.hospitalClinic || q.hospitalName || "Direct Facility"})`,
+    ).map((quoteItem) => ({
+      id: `q-${quoteItem.id}`,
+      action: `Hospital RFQ from ${quoteItem.customerName} (${quoteItem.hospitalClinic || quoteItem.hospitalName || "Direct Facility"})`,
       module: "Quotes",
-      reference: q.reference,
-      actor: q.customerName,
-      timestamp: formatLiveDate(q.createdAt, true),
+      reference: quoteItem.reference,
+      actor: quoteItem.customerName,
+      timestamp: formatLiveDate(quoteItem.createdAt, true),
       status:
-        q.status === "FULFILLED"
+        quoteItem.status === "FULFILLED"
           ? "Completed"
-          : q.status === "NEW"
+          : quoteItem.status === "NEW"
             ? "Pending Review"
             : "In Progress",
     }));

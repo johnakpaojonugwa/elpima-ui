@@ -29,35 +29,37 @@ export const OtpInput: React.FC<OtpInputProps> = ({
 
   useEffect(() => {
     if (autoFocus && !disabled) {
-      const firstEmptyIndex = digits.findIndex((d) => !d);
+      const firstEmptyIndex = digits.findIndex(
+        (digitCharacter) => !digitCharacter,
+      );
       const targetIndex = firstEmptyIndex !== -1 ? firstEmptyIndex : 0;
       inputRefs.current[targetIndex]?.focus();
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    index: number,
+    changeEvent: React.ChangeEvent<HTMLInputElement>,
+    digitIndex: number,
   ) => {
-    const rawVal = e.target.value;
-    const cleanDigit = rawVal.replace(/\D/g, "");
+    const rawInputValue = changeEvent.target.value;
+    const cleanDigit = rawInputValue.replace(/\D/g, "");
 
     if (!cleanDigit) {
       const newDigits = [...digits];
-      newDigits[index] = "";
+      newDigits[digitIndex] = "";
       onChange(newDigits.join(""));
       return;
     }
 
     const lastChar = cleanDigit[cleanDigit.length - 1];
     const newDigits = [...digits];
-    newDigits[index] = lastChar;
+    newDigits[digitIndex] = lastChar;
     const newOtp = newDigits.join("");
     onChange(newOtp);
 
-    if (index < length - 1) {
-      inputRefs.current[index + 1]?.focus();
-      inputRefs.current[index + 1]?.select();
+    if (digitIndex < length - 1) {
+      inputRefs.current[digitIndex + 1]?.focus();
+      inputRefs.current[digitIndex + 1]?.select();
     }
 
     if (newOtp.length === length && !newOtp.includes(" ")) {
@@ -66,41 +68,44 @@ export const OtpInput: React.FC<OtpInputProps> = ({
   };
 
   const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    index: number,
+    keyboardEvent: React.KeyboardEvent<HTMLInputElement>,
+    digitIndex: number,
   ) => {
-    if (e.key === "Backspace") {
-      e.preventDefault();
-      if (digits[index]) {
+    if (keyboardEvent.key === "Backspace") {
+      keyboardEvent.preventDefault();
+      if (digits[digitIndex]) {
         const newDigits = [...digits];
-        newDigits[index] = "";
+        newDigits[digitIndex] = "";
         onChange(newDigits.join(""));
-      } else if (index > 0) {
+      } else if (digitIndex > 0) {
         const newDigits = [...digits];
-        newDigits[index - 1] = "";
+        newDigits[digitIndex - 1] = "";
         onChange(newDigits.join(""));
-        inputRefs.current[index - 1]?.focus();
+        inputRefs.current[digitIndex - 1]?.focus();
       }
-    } else if (e.key === "ArrowLeft" && index > 0) {
-      e.preventDefault();
-      inputRefs.current[index - 1]?.focus();
-      inputRefs.current[index - 1]?.select();
-    } else if (e.key === "ArrowRight" && index < length - 1) {
-      e.preventDefault();
-      inputRefs.current[index + 1]?.focus();
-      inputRefs.current[index + 1]?.select();
-    } else if (e.key === "Delete") {
-      e.preventDefault();
+    } else if (keyboardEvent.key === "ArrowLeft" && digitIndex > 0) {
+      keyboardEvent.preventDefault();
+      inputRefs.current[digitIndex - 1]?.focus();
+      inputRefs.current[digitIndex - 1]?.select();
+    } else if (keyboardEvent.key === "ArrowRight" && digitIndex < length - 1) {
+      keyboardEvent.preventDefault();
+      inputRefs.current[digitIndex + 1]?.focus();
+      inputRefs.current[digitIndex + 1]?.select();
+    } else if (keyboardEvent.key === "Delete") {
+      keyboardEvent.preventDefault();
       const newDigits = [...digits];
-      newDigits[index] = "";
+      newDigits[digitIndex] = "";
       onChange(newDigits.join(""));
     }
   };
 
   const handlePaste = useCallback(
-    (e: React.ClipboardEvent<HTMLInputElement>, activeIndex: number) => {
-      e.preventDefault();
-      const clipboardText = e.clipboardData.getData("text/plain");
+    (
+      clipboardEvent: React.ClipboardEvent<HTMLInputElement>,
+      activeIndex: number,
+    ) => {
+      clipboardEvent.preventDefault();
+      const clipboardText = clipboardEvent.clipboardData.getData("text/plain");
       const pastedDigits = clipboardText.replace(/\D/g, "");
       if (!pastedDigits) return;
 
@@ -109,12 +114,12 @@ export const OtpInput: React.FC<OtpInputProps> = ({
 
       let lastFilledIndex = startIndex;
       for (
-        let i = 0;
-        i < pastedDigits.length && startIndex + i < length;
-        i++
+        let charIndex = 0;
+        charIndex < pastedDigits.length && startIndex + charIndex < length;
+        charIndex++
       ) {
-        newDigits[startIndex + i] = pastedDigits[i];
-        lastFilledIndex = startIndex + i;
+        newDigits[startIndex + charIndex] = pastedDigits[charIndex];
+        lastFilledIndex = startIndex + charIndex;
       }
 
       const newOtp = newDigits.join("");
@@ -138,16 +143,16 @@ export const OtpInput: React.FC<OtpInputProps> = ({
         role="group"
         aria-label="Verification code inputs"
       >
-        {Array.from({ length }, (_, i) => {
-          const digit = digits[i] || "";
+        {Array.from({ length }, (_, digitIndex) => {
+          const digit = digits[digitIndex] || "";
           const isFilled = Boolean(digit);
 
           return (
-            <div key={i} className="relative">
+            <div key={digitIndex} className="relative">
               <input
-                id={`${idPrefix}-${i}`}
-                ref={(el) => {
-                  inputRefs.current[i] = el;
+                id={`${idPrefix}-${digitIndex}`}
+                ref={(inputElement) => {
+                  inputRefs.current[digitIndex] = inputElement;
                 }}
                 type="text"
                 inputMode="numeric"
@@ -156,11 +161,17 @@ export const OtpInput: React.FC<OtpInputProps> = ({
                 maxLength={1}
                 value={digit}
                 disabled={disabled}
-                onChange={(e) => handleChange(e, i)}
-                onKeyDown={(e) => handleKeyDown(e, i)}
-                onPaste={(e) => handlePaste(e, i)}
-                onFocus={(e) => e.target.select()}
-                aria-label={`Digit ${i + 1} of ${length}`}
+                onChange={(changeEvent) =>
+                  handleChange(changeEvent, digitIndex)
+                }
+                onKeyDown={(keyboardEvent) =>
+                  handleKeyDown(keyboardEvent, digitIndex)
+                }
+                onPaste={(clipboardEvent) =>
+                  handlePaste(clipboardEvent, digitIndex)
+                }
+                onFocus={(focusEvent) => focusEvent.target.select()}
+                aria-label={`Digit ${digitIndex + 1} of ${length}`}
                 className={`w-11 h-12 sm:w-12 sm:h-13 text-center text-lg sm:text-xl font-bold rounded-lg border transition-all duration-150 outline-none select-all ${
                   disabled
                     ? "bg-stone-100 border-stone-200 text-stone-400 cursor-not-allowed"

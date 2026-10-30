@@ -87,21 +87,41 @@ function normalizeIconType(
   return "quote";
 }
 
-function normalizeNotification(raw: any): NotificationItem {
+function normalizeNotification(rawNotification: any): NotificationItem {
   return {
-    id: String(raw.id || raw._id || `${Date.now()}-${Math.random()}`),
+    id: String(
+      rawNotification.id ||
+        rawNotification._id ||
+        `${Date.now()}-${Math.random()}`,
+    ),
     category:
-      raw.category === "system" || raw.category === "general"
-        ? raw.category
-        : (raw.type || "").toLowerCase().includes("system")
+      rawNotification.category === "system" ||
+      rawNotification.category === "general"
+        ? rawNotification.category
+        : (rawNotification.type || "").toLowerCase().includes("system")
           ? "system"
           : "general",
-    day: normalizeDay(raw.day, raw.timestamp, raw.createdAt),
-    title: raw.title || "Notification",
-    description: raw.description || raw.message || raw.body || "",
-    timestamp: normalizeTimestamp(raw.timestamp, raw.createdAt),
-    isRead: Boolean(raw.isRead ?? raw.read ?? false),
-    iconType: normalizeIconType(raw.iconType, raw.type, raw.category),
+    day: normalizeDay(
+      rawNotification.day,
+      rawNotification.timestamp,
+      rawNotification.createdAt,
+    ),
+    title: rawNotification.title || "Notification",
+    description:
+      rawNotification.description ||
+      rawNotification.message ||
+      rawNotification.body ||
+      "",
+    timestamp: normalizeTimestamp(
+      rawNotification.timestamp,
+      rawNotification.createdAt,
+    ),
+    isRead: Boolean(rawNotification.isRead ?? rawNotification.read ?? false),
+    iconType: normalizeIconType(
+      rawNotification.iconType,
+      rawNotification.type,
+      rawNotification.category,
+    ),
   };
 }
 
@@ -118,16 +138,16 @@ export function useNotifications(explicitToken?: string) {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
-      const res = await apiClient.get("/api/v1/notifications", {
+      const response = await apiClient.get("/api/v1/notifications", {
         headers: authHeader,
       });
 
-      const rawList = Array.isArray(res.data)
-        ? res.data
-        : Array.isArray(res.data?.notifications)
-          ? res.data.notifications
-          : Array.isArray(res.data?.data)
-            ? res.data.data
+      const rawList = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.notifications)
+          ? response.data.notifications
+          : Array.isArray(response.data?.data)
+            ? response.data.data
             : [];
 
       return rawList.map(normalizeNotification);
@@ -139,13 +159,14 @@ export function useNotifications(explicitToken?: string) {
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ["notifications", "unread-count"],
     queryFn: async () => {
-      const res = await apiClient.get("/api/v1/notifications/unread-count", {
+      const response = await apiClient.get("/api/v1/notifications/unread-count", {
         headers: authHeader,
       });
 
-      if (typeof res.data === "number") return res.data;
-      if (typeof res.data?.unreadCount === "number") return res.data.unreadCount;
-      if (typeof res.data?.count === "number") return res.data.count;
+      if (typeof response.data === "number") return response.data;
+      if (typeof response.data?.unreadCount === "number")
+        return response.data.unreadCount;
+      if (typeof response.data?.count === "number") return response.data.count;
       return 0;
     },
     enabled: !!token,
@@ -153,9 +174,9 @@ export function useNotifications(explicitToken?: string) {
 
   // 3. Mark single notification as read mutation
   const toggleReadMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (notificationId: string) => {
       await apiClient.patch(
-        `/api/v1/notifications/${id}/read`,
+        `/api/v1/notifications/${notificationId}/read`,
         { isRead: true },
         { headers: authHeader },
       );
@@ -207,7 +228,7 @@ export function useNotifications(explicitToken?: string) {
               ? JSON.parse(event.data)
               : event.data;
 
-          const item = rawData?.data || rawData;
+          const notificationItem = rawData?.data || rawData;
 
           // Invalidate queries so modal and badge update in real-time
           queryClient.invalidateQueries({ queryKey: ["notifications"] });
@@ -216,15 +237,19 @@ export function useNotifications(explicitToken?: string) {
           });
 
           // Trigger pop-up toast alert using existing toast system
-          const title = item?.title || "New Notification";
-          const description = item?.description || item?.message;
+          const title = notificationItem?.title || "New Notification";
+          const description =
+            notificationItem?.description || notificationItem?.message;
           const toastMessage = description
             ? `${title}: ${description}`
             : title;
 
           toast.info(toastMessage);
-        } catch (err) {
-          console.error("Failed to parse SSE notification payload:", err);
+        } catch (parseError) {
+          console.error(
+            "Failed to parse SSE notification payload:",
+            parseError,
+          );
         }
       };
 
@@ -237,8 +262,11 @@ export function useNotifications(explicitToken?: string) {
       eventSource.onerror = () => {
         // EventSource will automatically attempt to reconnect on network drop
       };
-    } catch (err) {
-      console.warn("EventSource initialization failed:", err);
+    } catch (initializationError) {
+      console.warn(
+        "EventSource initialization failed:",
+        initializationError,
+      );
     }
 
     return () => {
@@ -254,7 +282,8 @@ export function useNotifications(explicitToken?: string) {
     isLoading,
     refetch,
     markAllAsRead: () => markAllAsReadMutation.mutate(),
-    toggleRead: (id: string) => toggleReadMutation.mutate(id),
+    toggleRead: (notificationId: string) =>
+      toggleReadMutation.mutate(notificationId),
   };
 }
 

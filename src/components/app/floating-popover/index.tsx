@@ -109,9 +109,12 @@ export const FloatingPopover: React.FC<FloatingPopoverProps> = ({
     if (!isOpen) return;
 
     // Update position on scroll (capture phase catches nested container scrolling)
-    const handleScroll = (e: Event) => {
+    const handleScroll = (scrollEvent: Event) => {
       // Don't reposition if user is scrolling inside the popover itself!
-      if (popoverRef.current && popoverRef.current.contains(e.target as Node)) {
+      if (
+        popoverRef.current &&
+        popoverRef.current.contains(scrollEvent.target as Node)
+      ) {
         return;
       }
       updatePosition();
@@ -121,8 +124,8 @@ export const FloatingPopover: React.FC<FloatingPopoverProps> = ({
       updatePosition();
     };
 
-    const handleMouseDown = (e: MouseEvent) => {
-      const target = e.target as Node;
+    const handleMouseDown = (mouseEvent: MouseEvent) => {
+      const target = mouseEvent.target as Node;
       if (triggerRef.current && triggerRef.current.contains(target)) {
         return;
       }
@@ -132,8 +135,8 @@ export const FloatingPopover: React.FC<FloatingPopoverProps> = ({
       onClose();
     };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+    const handleKeyDown = (keyboardEvent: KeyboardEvent) => {
+      if (keyboardEvent.key === "Escape") {
         onClose();
       }
     };
@@ -264,7 +267,9 @@ export const FloatingSelect: React.FC<FloatingSelectProps> = ({
         type="button"
         disabled={disabled}
         title={selectedOption ? selectedOption.label : placeholder}
-        onClick={() => !disabled && setIsOpen((prev) => !prev)}
+        onClick={() =>
+          !disabled && setIsOpen((isCurrentlyOpen) => !isCurrentlyOpen)
+        }
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className={`relative inline-flex items-center justify-between text-left transition-all duration-150 border outline-none cursor-pointer select-none ${sizeClasses} ${

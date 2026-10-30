@@ -136,17 +136,17 @@ export const ControlAdminHeader: React.FC<ControlAdminHeaderProps> = ({
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Search Input Pill */}
             <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const q = searchQuery.trim();
-                if (!q) return;
-                if (q.toUpperCase().startsWith("ELP-")) {
+              onSubmit={(submitEvent) => {
+                submitEvent.preventDefault();
+                const trimmedQuery = searchQuery.trim();
+                if (!trimmedQuery) return;
+                if (trimmedQuery.toUpperCase().startsWith("ELP-")) {
                   navigate(
-                    `/admin/quotes?reference=${encodeURIComponent(q)}`,
+                    `/admin/quotes?reference=${encodeURIComponent(trimmedQuery)}`,
                   );
                 } else {
                   navigate(
-                    `/admin/products?search=${encodeURIComponent(q)}`,
+                    `/admin/products?search=${encodeURIComponent(trimmedQuery)}`,
                   );
                 }
               }}
