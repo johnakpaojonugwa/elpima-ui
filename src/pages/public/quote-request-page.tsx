@@ -74,7 +74,7 @@ const QuoteRequestPage: React.FC = () => {
             <CheckCircle2 className="w-8 h-8" />
           </div>
 
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-teal-600">
             Quote Request Submitted
           </h1>
           <p className="mt-2 text-sm text-slate-600">
@@ -125,14 +125,14 @@ const QuoteRequestPage: React.FC = () => {
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-8 shadow-xs">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-teal-600">
             Request Proforma Quote (RFQ)
           </h1>
           <Link
             to={ROUTES.PUBLIC.CATALOG}
-            className="text-sm font-medium text-sky-600 hover:underline"
+            className="text-xs font-bold text-teal-700 hover:text-teal-800"
           >
-            + Add Equipment
+            + Add More Equipment
           </Link>
         </div>
 
@@ -143,28 +143,36 @@ const QuoteRequestPage: React.FC = () => {
         )}
 
         {items.length === 0 ? (
-          <p className="mt-6 text-sm text-slate-500">
-            Your quote bag is currently empty. Browse the catalog to add
-            surgical or diagnostic equipment.
-          </p>
+          <div className="mt-6 text-center py-10 space-y-3">
+            <p className="text-sm text-stone-500">
+              Your quote bag is currently empty. Browse the catalog to add
+              surgical or diagnostic equipment.
+            </p>
+            <Link
+              to={ROUTES.PUBLIC.CATALOG}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-xs"
+            >
+              Explore Equipment Catalog
+            </Link>
+          </div>
         ) : (
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <div className="divide-y divide-slate-200 rounded-xl border border-slate-200 p-4">
+            <div className="divide-y divide-stone-200 rounded-2xl border border-stone-200 p-4 bg-stone-50/40">
               {items.map((quoteItem) => (
                 <div
                   key={quoteItem.productId}
-                  className="flex items-center justify-between py-2 text-sm"
+                  className="flex items-center justify-between py-2.5 text-xs sm:text-sm"
                 >
                   <div>
-                    <p className="font-medium text-slate-900">{quoteItem.name}</p>
-                    <p className="text-xs text-slate-500">
-                      Quantity: {quoteItem.quantity}
+                    <p className="font-bold text-stone-900">{quoteItem.name}</p>
+                    <p className="text-xs text-stone-500">
+                      Quantity: <strong className="text-teal-700">{quoteItem.quantity}</strong>
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => removeItem(quoteItem.productId)}
-                    className="text-xs font-medium text-rose-600 hover:underline"
+                    className="text-xs font-bold text-rose-600 hover:underline cursor-pointer"
                   >
                     Remove
                   </button>
@@ -172,7 +180,7 @@ const QuoteRequestPage: React.FC = () => {
               ))}
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 text-xs">
               <input
                 required
                 placeholder="Full Name *"
@@ -180,7 +188,7 @@ const QuoteRequestPage: React.FC = () => {
                 onChange={(changeEvent) =>
                   setCustomerName(changeEvent.target.value)
                 }
-                className="rounded-lg border border-slate-300 px-3.5 py-2 text-sm"
+                className="rounded-xl border border-stone-300 px-3.5 py-2.5 bg-stone-50/50 focus:bg-white focus:border-teal-600 focus:outline-none"
               />
               <input
                 required
@@ -189,7 +197,7 @@ const QuoteRequestPage: React.FC = () => {
                 onChange={(changeEvent) =>
                   setCustomerPhone(changeEvent.target.value)
                 }
-                className="rounded-lg border border-slate-300 px-3.5 py-2 text-sm"
+                className="rounded-xl border border-stone-300 px-3.5 py-2.5 bg-stone-50/50 focus:bg-white focus:border-teal-600 focus:outline-none"
               />
               <input
                 type="email"
@@ -198,7 +206,7 @@ const QuoteRequestPage: React.FC = () => {
                 onChange={(changeEvent) =>
                   setCustomerEmail(changeEvent.target.value)
                 }
-                className="rounded-lg border border-slate-300 px-3.5 py-2 text-sm"
+                className="rounded-xl border border-stone-300 px-3.5 py-2.5 bg-stone-50/50 focus:bg-white focus:border-teal-600 focus:outline-none"
               />
               <input
                 placeholder="Hospital / Clinic / Organization"
@@ -206,7 +214,7 @@ const QuoteRequestPage: React.FC = () => {
                 onChange={(changeEvent) =>
                   setHospitalClinic(changeEvent.target.value)
                 }
-                className="rounded-lg border border-slate-300 px-3.5 py-2 text-sm"
+                className="rounded-xl border border-stone-300 px-3.5 py-2.5 bg-stone-50/50 focus:bg-white focus:border-teal-600 focus:outline-none"
               />
               <input
                 placeholder="City / State (e.g. Lagos, Abuja)"
@@ -214,7 +222,7 @@ const QuoteRequestPage: React.FC = () => {
                 onChange={(changeEvent) =>
                   setLocation(changeEvent.target.value)
                 }
-                className="rounded-lg border border-slate-300 px-3.5 py-2 text-sm sm:col-span-2"
+                className="rounded-xl border border-stone-300 px-3.5 py-2.5 bg-stone-50/50 focus:bg-white focus:border-teal-600 focus:outline-none sm:col-span-2"
               />
               <textarea
                 placeholder="Additional specifications or delivery notes..."
@@ -223,18 +231,18 @@ const QuoteRequestPage: React.FC = () => {
                   setCustomerNotes(changeEvent.target.value)
                 }
                 rows={3}
-                className="rounded-lg border border-slate-300 px-3.5 py-2 text-sm sm:col-span-2"
+                className="rounded-xl border border-stone-300 p-3.5 bg-stone-50/50 focus:bg-white focus:border-teal-600 focus:outline-none sm:col-span-2 leading-relaxed"
               />
             </div>
 
             <button
               type="submit"
               disabled={createQuote.isPending}
-              className="w-full rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50"
+              className="w-full rounded-xl bg-teal-600 hover:bg-teal-700 px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-xs disabled:opacity-50 transition-colors cursor-pointer"
             >
               {createQuote.isPending
-                ? "Generating Quote & WhatsApp Link..."
-                : "Submit Quote Inquiry"}
+                ? "Generating Proforma Quote & WhatsApp Link..."
+                : "Submit Institutional Proforma RFQ"}
             </button>
           </form>
         )}

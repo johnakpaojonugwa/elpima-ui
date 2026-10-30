@@ -58,8 +58,14 @@ export const ROUTES = {
   PUBLIC: {
     HOME: "/",
     CATALOG: "/catalog",
+    PRODUCTS: "/products",
+    ABOUT: "/about",
+    CONTACT: "/contact",
     PRODUCT_DETAIL: "/products/:slug",
     QUOTE_REQUEST: "/quote",
+    PRIVACY_POLICY: "/privacy-policy",
+    TERMS_OF_USE: "/terms-of-use",
+    SAFETY_COMPLIANCE: "/safety-and-compliance",
   },
   AUTH: {
     ROOT: "/auth",
@@ -95,15 +101,31 @@ export const ROUTES = {
 // ==========================================
 // 3. Lazy-Loaded Route Views
 // ==========================================
+const PublicLayout = lazyWithPreload(
+  () => import("@/components/layout/public-layout"),
+);
 const HomePage = lazyWithPreload(() => import("@/pages/public/home-page"));
 const CatalogPage = lazyWithPreload(
   () => import("@/pages/public/catalog-page"),
+);
+const AboutPage = lazyWithPreload(() => import("@/pages/public/about-page"));
+const ContactPage = lazyWithPreload(
+  () => import("@/pages/public/contact-page"),
 );
 const ProductDetailPage = lazyWithPreload(
   () => import("@/pages/public/product-detail-page"),
 );
 const QuoteRequestPage = lazyWithPreload(
   () => import("@/pages/public/quote-request-page"),
+);
+const PrivacyPolicyPage = lazyWithPreload(
+  () => import("@/pages/public/privacy-policy-page"),
+);
+const TermsOfUsePage = lazyWithPreload(
+  () => import("@/pages/public/terms-of-use-page"),
+);
+const SafetyCompliancePage = lazyWithPreload(
+  () => import("@/pages/public/safety-compliance-page"),
 );
 const AuthPage = lazyWithPreload(() => import("@/pages/auth/auth-page"));
 const AdminDashboardPage = lazyWithPreload(
@@ -119,8 +141,8 @@ const SuperAdminDashboardPage = lazyWithPreload(
 export const RouteLoadingFallback: React.FC = () => (
   <div className="flex min-h-screen items-center justify-center bg-slate-50">
     <div className="flex flex-col items-center gap-3">
-      <div className="h-9 w-9 animate-spin rounded-full border-3 border-slate-200 border-t-sky-600" />
-      <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
+      <div className="h-9 w-9 animate-spin rounded-full border-3 border-stone-200 border-t-teal-600" />
+      <p className="text-xs font-semibold tracking-wide text-stone-500 uppercase">
         Loading Elpima Surgicals...
       </p>
     </div>
@@ -191,26 +213,61 @@ const withSuspense = (Component: React.ComponentType) => (
 // 5. Browser Router Configuration
 // ==========================================
 export const router = createBrowserRouter([
-  // Public Storefront Routes
+  // Public Storefront Routes with Shared Public Layout (Navbar + Footer)
   {
-    path: ROUTES.PUBLIC.HOME,
-    element: withSuspense(HomePage),
+    path: "/",
+    element: withSuspense(PublicLayout),
     errorElement: <RouteErrorBoundary />,
-  },
-  {
-    path: ROUTES.PUBLIC.CATALOG,
-    element: withSuspense(CatalogPage),
-    errorElement: <RouteErrorBoundary />,
-  },
-  {
-    path: ROUTES.PUBLIC.PRODUCT_DETAIL,
-    element: withSuspense(ProductDetailPage),
-    errorElement: <RouteErrorBoundary />,
-  },
-  {
-    path: ROUTES.PUBLIC.QUOTE_REQUEST,
-    element: withSuspense(QuoteRequestPage),
-    errorElement: <RouteErrorBoundary />,
+    children: [
+      {
+        index: true,
+        element: withSuspense(HomePage),
+      },
+      {
+        path: "catalog",
+        element: withSuspense(CatalogPage),
+      },
+      {
+        path: "products",
+        element: withSuspense(CatalogPage),
+      },
+      {
+        path: "about",
+        element: withSuspense(AboutPage),
+      },
+      {
+        path: "contact",
+        element: withSuspense(ContactPage),
+      },
+      {
+        path: "products/:slug",
+        element: withSuspense(ProductDetailPage),
+      },
+      {
+        path: "quote",
+        element: withSuspense(QuoteRequestPage),
+      },
+      {
+        path: "privacy-policy",
+        element: withSuspense(PrivacyPolicyPage),
+      },
+      {
+        path: "terms-of-use",
+        element: withSuspense(TermsOfUsePage),
+      },
+      {
+        path: "safety-and-compliance",
+        element: withSuspense(SafetyCompliancePage),
+      },
+      {
+        path: "safety-compliance",
+        element: withSuspense(SafetyCompliancePage),
+      },
+      {
+        path: "safety",
+        element: withSuspense(SafetyCompliancePage),
+      },
+    ],
   },
 
   // Guest Authentication Routes
