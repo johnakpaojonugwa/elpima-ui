@@ -16,6 +16,7 @@ export interface QuoteItem {
 export interface QuoteBagState {
   items: QuoteItem[];
   isDrawerOpen: boolean;
+  updatedAt: number;
   addItem: (item: Omit<QuoteItem, "quantity">, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -25,11 +26,14 @@ export interface QuoteBagState {
   totalCount: () => number;
 }
 
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
 export const useQuoteBagStore = create<QuoteBagState>()(
   persist(
     (set, get) => ({
       items: [],
       isDrawerOpen: false,
+      updatedAt: Date.now(),
       addItem: (item, quantity = 1) => {
         set((state) => {
           const existing = state.items.find(
@@ -37,6 +41,7 @@ export const useQuoteBagStore = create<QuoteBagState>()(
           );
           if (existing) {
             return {
+              updatedAt: Date.now(),
               items: state.items.map((i) =>
                 i.productId === item.productId
                   ? { ...i, quantity: i.quantity + quantity }
@@ -45,6 +50,7 @@ export const useQuoteBagStore = create<QuoteBagState>()(
             };
           }
           return {
+            updatedAt: Date.now(),
             items: [
               ...state.items,
               { ...item, quantity: Math.max(1, quantity) },
@@ -54,6 +60,7 @@ export const useQuoteBagStore = create<QuoteBagState>()(
       },
       removeItem: (productId: string) => {
         set((state) => ({
+          updatedAt: Date.now(),
           items: state.items.filter((i) => i.productId !== productId),
         }));
       },
@@ -63,6 +70,7 @@ export const useQuoteBagStore = create<QuoteBagState>()(
           return;
         }
         set((state) => ({
+          updatedAt: Date.now(),
           items: state.items.map((i) =>
             i.productId === productId ? { ...i, quantity } : i,
           ),
@@ -70,13 +78,14 @@ export const useQuoteBagStore = create<QuoteBagState>()(
       },
       updateItemNotes: (productId: string, notes: string) => {
         set((state) => ({
+          updatedAt: Date.now(),
           items: state.items.map((i) =>
             i.productId === productId ? { ...i, notes } : i,
           ),
         }));
       },
       clearBag: () => {
-        set({ items: [] });
+        set({ items: [], updatedAt: Date.now() });
       },
       setDrawerOpen: (open: boolean) => {
         set({ isDrawerOpen: open });
@@ -89,7 +98,16 @@ export const useQuoteBagStore = create<QuoteBagState>()(
       name: "elpima_quote_bag",
       partialize: (state) => ({
         items: state.items,
+        updatedAt: state.updatedAt,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        // Invalidate bags older than 7 days to prevent ordering deactivated/removed equipment
+        if (state.updatedAt && Date.now() - state.updatedAt > SEVEN_DAYS_MS) {
+          state.items = [];
+          state.updatedAt = Date.now();
+        }
+      },
     },
   ),
 );

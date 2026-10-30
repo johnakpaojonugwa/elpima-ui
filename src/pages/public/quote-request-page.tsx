@@ -1,6 +1,7 @@
 import type React from "react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { CheckCircle2, MessageSquare, ExternalLink } from "lucide-react";
 import { useCreateQuoteMutation } from "@/hooks/queries";
 import { ROUTES } from "@/routes";
 import { useQuoteBag } from "@/store";
@@ -15,32 +16,110 @@ const QuoteRequestPage: React.FC = () => {
   const [hospitalClinic, setHospitalClinic] = useState("");
   const [location, setLocation] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [submittedQuote, setSubmittedQuote] = useState<{
+    reference: string;
+    whatsappLink?: string;
+  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0) return;
+    setSubmitError("");
 
-    const result = await createQuote.mutateAsync({
-      payload: {
-        customerName,
-        customerPhone,
-        customerEmail: customerEmail || undefined,
-        hospitalClinic: hospitalClinic || undefined,
-        location: location || undefined,
-        customerNotes: customerNotes || undefined,
-        items: items.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          customRequirement: item.notes,
-        })),
-      },
-    });
+    try {
+      const result = await createQuote.mutateAsync({
+        payload: {
+          customerName,
+          customerPhone,
+          customerEmail: customerEmail || undefined,
+          hospitalClinic: hospitalClinic || undefined,
+          location: location || undefined,
+          customerNotes: customerNotes || undefined,
+          items: items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            customRequirement: item.notes,
+          })),
+        },
+      });
 
-    clearBag();
-    if (result.whatsappLink) {
-      window.open(result.whatsappLink, "_blank", "noopener,noreferrer");
+      clearBag();
+      setSubmittedQuote({
+        reference: result.reference,
+        whatsappLink: result.whatsappLink,
+      });
+
+      if (result.whatsappLink) {
+        try {
+          window.open(result.whatsappLink, "_blank", "noopener,noreferrer");
+        } catch {
+          // Popup blocked - user can click button on success screen
+        }
+      }
+    } catch (err: any) {
+      setSubmitError(
+        err?.normalizedMessage ||
+          err?.response?.data?.message ||
+          "Failed to submit quote request. Please try again.",
+      );
     }
   };
+
+  if (submittedQuote) {
+    return (
+      <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
+        <div className="mx-auto max-w-xl w-full rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="w-8 h-8" />
+          </div>
+
+          <h1 className="text-2xl font-bold text-slate-900">
+            Quote Request Submitted
+          </h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Your official inquiry has been recorded with reference{" "}
+            <strong className="font-mono text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
+              {submittedQuote.reference}
+            </strong>
+            .
+          </p>
+
+          <p className="mt-4 text-xs text-slate-500">
+            Our surgical procurement desk is ready to review your equipment
+            inquiry and dispatch your proforma invoice.
+          </p>
+
+          {submittedQuote.whatsappLink && (
+            <div className="mt-6">
+              <a
+                href={submittedQuote.whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 w-full rounded-xl bg-[#25D366] hover:bg-[#20ba59] px-6 py-3.5 text-base font-bold text-white shadow-sm transition-colors"
+              >
+                <MessageSquare className="w-5 h-5" />
+                <span>Chat on WhatsApp Desk</span>
+                <ExternalLink className="w-4 h-4 ml-1" />
+              </a>
+              <p className="mt-2 text-[11px] text-slate-400">
+                Click above if the WhatsApp window did not open automatically.
+              </p>
+            </div>
+          )}
+
+          <div className="mt-6 pt-6 border-t border-slate-100 flex justify-center">
+            <Link
+              to={ROUTES.PUBLIC.CATALOG}
+              className="text-sm font-semibold text-slate-600 hover:text-slate-900 hover:underline"
+            >
+              ← Return to Equipment Catalog
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
@@ -56,6 +135,12 @@ const QuoteRequestPage: React.FC = () => {
             + Add Equipment
           </Link>
         </div>
+
+        {submitError && (
+          <div className="mt-4 p-3 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs">
+            {submitError}
+          </div>
+        )}
 
         {items.length === 0 ? (
           <p className="mt-6 text-sm text-slate-500">

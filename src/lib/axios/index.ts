@@ -35,6 +35,9 @@ export default function createApiClient(
     },
   });
 
+  // Shared in-flight refresh promise to prevent concurrent 401 thundering-herd race conditions
+  let activeRefreshPromise: Promise<string | null> | null = null;
+
   // Request interceptor - dynamically attach active auth token & idempotency key
   apiClient.interceptors.request.use(
     (requestConfig) => {
@@ -216,63 +219,78 @@ export default function createApiClient(
 
           if (storedRefreshToken) {
             try {
-              // Direct refresh call using a clean axios instance to avoid interceptor recursion
-              const refreshResponse = await axios.post(
-                `${normalizedBaseUrl}/api/v1/auth/refresh-token`,
-                { refreshToken: storedRefreshToken },
-                {
-                  headers: {
-                    "Content-Type": "application/json",
-                    "ngrok-skip-browser-warning": "true",
-                  },
-                },
-              );
+              if (!activeRefreshPromise) {
+                activeRefreshPromise = (async () => {
+                  try {
+                    // Direct refresh call using a clean axios instance to avoid interceptor recursion
+                    const refreshResponse = await axios.post(
+                      `${normalizedBaseUrl}/api/v1/auth/refresh-token`,
+                      { refreshToken: storedRefreshToken },
+                      {
+                        headers: {
+                          "Content-Type": "application/json",
+                          "ngrok-skip-browser-warning": "true",
+                        },
+                      },
+                    );
 
-              const refreshedData =
-                refreshResponse.data?.data || refreshResponse.data;
-              const newAccessToken =
-                refreshedData?.accessToken ||
-                refreshedData?.access_token ||
-                refreshedData?.token;
-              const newRefreshToken =
-                refreshedData?.refreshToken || refreshedData?.refresh_token;
+                    const refreshedData =
+                      refreshResponse.data?.data || refreshResponse.data;
+                    const nextAccessToken =
+                      refreshedData?.accessToken ||
+                      refreshedData?.access_token ||
+                      refreshedData?.token;
+                    const nextRefreshToken =
+                      refreshedData?.refreshToken ||
+                      refreshedData?.refresh_token;
+
+                    if (nextAccessToken) {
+                      if (typeof window !== "undefined") {
+                        localStorage.setItem("access_token", nextAccessToken);
+                        localStorage.setItem("accessToken", nextAccessToken);
+                        if (nextRefreshToken) {
+                          localStorage.setItem("refresh_token", nextRefreshToken);
+                          localStorage.setItem("refreshToken", nextRefreshToken);
+                        }
+
+                        // Keep Zustand persisted auth-storage in sync
+                        try {
+                          const authStorageRaw =
+                            localStorage.getItem("auth-storage");
+                          if (authStorageRaw) {
+                            const parsed = JSON.parse(authStorageRaw);
+                            if (parsed?.state) {
+                              parsed.state.accessToken = nextAccessToken;
+                              parsed.state.access_token = nextAccessToken;
+                              if (nextRefreshToken) {
+                                parsed.state.refreshToken = nextRefreshToken;
+                                parsed.state.refresh_token = nextRefreshToken;
+                              }
+                              localStorage.setItem(
+                                "auth-storage",
+                                JSON.stringify(parsed),
+                              );
+                            }
+                          }
+                        } catch {
+                          // ignore
+                        }
+                      }
+                      return nextAccessToken;
+                    }
+                    return null;
+                  } finally {
+                    activeRefreshPromise = null;
+                  }
+                })();
+              }
+
+              const newAccessToken = await activeRefreshPromise;
 
               if (newAccessToken) {
-                if (typeof window !== "undefined") {
-                  localStorage.setItem("access_token", newAccessToken);
-                  localStorage.setItem("accessToken", newAccessToken);
-                  if (newRefreshToken) {
-                    localStorage.setItem("refresh_token", newRefreshToken);
-                    localStorage.setItem("refreshToken", newRefreshToken);
-                  }
-
-                  // Keep Zustand persisted auth-storage in sync
-                  try {
-                    const authStorageRaw = localStorage.getItem("auth-storage");
-                    if (authStorageRaw) {
-                      const parsed = JSON.parse(authStorageRaw);
-                      if (parsed?.state) {
-                        parsed.state.accessToken = newAccessToken;
-                        parsed.state.access_token = newAccessToken;
-                        if (newRefreshToken) {
-                          parsed.state.refreshToken = newRefreshToken;
-                          parsed.state.refresh_token = newRefreshToken;
-                        }
-                        localStorage.setItem(
-                          "auth-storage",
-                          JSON.stringify(parsed),
-                        );
-                      }
-                    }
-                  } catch {
-                    // ignore
-                  }
-                }
-
                 if (originalRequest.headers) {
                   originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
                 }
-
                 return apiClient(originalRequest);
               }
             } catch (refreshFailedError) {

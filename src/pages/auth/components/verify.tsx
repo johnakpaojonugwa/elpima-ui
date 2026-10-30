@@ -66,13 +66,18 @@ export const OtpVerificationPage: React.FC<OtpVerificationPageProps> = ({
       return;
     }
 
+    if (!tempToken) {
+      setError(
+        "Your 2FA session has expired or is invalid. Please return to sign in.",
+      );
+      return;
+    }
+
     setIsVerifying(true);
     setError("");
 
     try {
-      if (tempToken) {
-        await verify2FA({ tempToken, code: otp });
-      }
+      await verify2FA({ tempToken, code: otp });
       setIsVerified(true);
       setTimeout(onSuccess, 500);
     } catch (requestError: any) {

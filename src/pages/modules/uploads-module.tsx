@@ -26,6 +26,20 @@ interface UploadsModuleProps {
   onToast?: (message: string) => void;
 }
 
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+function validateUploadFile(file: File): string | null {
+  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+    return `Invalid format for "${file.name}". Only JPEG, PNG, and WebP images are supported.`;
+  }
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+    return `"${file.name}" exceeds the 5MB size limit (${sizeMb}MB).`;
+  }
+  return null;
+}
+
 export const UploadsModule: React.FC<UploadsModuleProps> = ({ onToast }) => {
   const { data: productsRes, isLoading } = useProductsQuery({ limit: 50 });
   const uploadSingle = useUploadSingleImageMutation();
@@ -67,6 +81,14 @@ export const UploadsModule: React.FC<UploadsModuleProps> = ({ onToast }) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadError("");
+
+    const validationError = validateUploadFile(file);
+    if (validationError) {
+      setUploadError(validationError);
+      e.target.value = "";
+      return;
+    }
+
     try {
       const res = await uploadSingle.mutateAsync(file);
       if (res?.url) {
@@ -88,6 +110,8 @@ export const UploadsModule: React.FC<UploadsModuleProps> = ({ onToast }) => {
           err?.response?.data?.message ||
           "Upload failed. Ensure file is JPEG, PNG, or WebP under 5MB.",
       );
+    } finally {
+      e.target.value = "";
     }
   };
 
@@ -97,7 +121,18 @@ export const UploadsModule: React.FC<UploadsModuleProps> = ({ onToast }) => {
     const filesList = e.target.files;
     if (!filesList || filesList.length === 0) return;
     setUploadError("");
+
     const files = Array.from(filesList).slice(0, 10);
+
+    for (const f of files) {
+      const validationError = validateUploadFile(f);
+      if (validationError) {
+        setUploadError(validationError);
+        e.target.value = "";
+        return;
+      }
+    }
+
     try {
       const res = await uploadMultiple.mutateAsync(files);
       const urls = res?.urls ?? [];
@@ -116,6 +151,8 @@ export const UploadsModule: React.FC<UploadsModuleProps> = ({ onToast }) => {
           err?.response?.data?.message ||
           "Batch upload failed. Max 10 JPEG/PNG/WebP images (5MB each).",
       );
+    } finally {
+      e.target.value = "";
     }
   };
 

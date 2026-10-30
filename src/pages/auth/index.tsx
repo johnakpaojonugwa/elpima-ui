@@ -67,26 +67,30 @@ export default function AuthPage() {
 
       {/* ================= RIGHT COLUMN: Sign In, 2FA & Password Recovery ================= */}
       <section className="w-full min-h-screen flex flex-col justify-between p-6 sm:p-10 lg:p-12 xl:p-16 order-2 lg:order-2 bg-white overflow-y-auto">
-        {/* Top Header Row: Quick Fill Buttons + Portal Badge */}
+        {/* Top Header Row: Quick Fill Buttons (Dev only) + Portal Badge */}
         <header className="w-full max-w-md mx-auto flex flex-wrap items-center justify-between gap-2 pb-6">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleQuickFillSuperAdmin}
-              className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/70 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
-              title="Auto-populate seeded Super-Admin credentials"
-            >
-              Auto-fill Super-Admin
-            </button>
-            <button
-              type="button"
-              onClick={handleQuickFillManager}
-              className="text-[11px] font-semibold text-sky-800 hover:text-sky-950 bg-sky-50 hover:bg-sky-100 border border-sky-200/70 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
-              title="Auto-populate seeded Supervising Manager credentials"
-            >
-              Auto-fill Manager
-            </button>
-          </div>
+          {import.meta.env.DEV ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleQuickFillSuperAdmin}
+                className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/70 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                title="Auto-populate seeded Super-Admin credentials (Development only)"
+              >
+                Auto-fill Super-Admin
+              </button>
+              <button
+                type="button"
+                onClick={handleQuickFillManager}
+                className="text-[11px] font-semibold text-sky-800 hover:text-sky-950 bg-sky-50 hover:bg-sky-100 border border-sky-200/70 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                title="Auto-populate seeded Supervising Manager credentials (Development only)"
+              >
+                Auto-fill Manager
+              </button>
+            </div>
+          ) : (
+            <div />
+          )}
 
           <span className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-[#2D7A58] text-white shadow-2xs">
             Staff Portal Sign In
