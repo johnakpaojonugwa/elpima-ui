@@ -357,97 +357,132 @@ export const CatalogPage: React.FC = () => {
           ) : viewMode === "grid" ? (
             /* Grid View */
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7">
-              {displayedProducts.map((productItem: Product) => (
-                <div
-                  key={productItem.id}
-                  className="group bg-white rounded-3xl border border-stone-200/90 shadow-2xs hover:shadow-md transition-all overflow-hidden flex flex-col justify-between"
-                >
-                  {/* Visual Header */}
-                  <div className="relative h-56 bg-stone-100 overflow-hidden border-b border-stone-100">
-                    <img
-                      src={
-                        productItem.images?.[0] ||
-                        "https://images.unsplash.com/photo-1579684385127-1ef15d508118?q=80&w=800&auto=format&fit=crop"
-                      }
-                      alt={productItem.name}
-                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                    />
+              {displayedProducts.map((productItem: Product) => {
+                const thumbnailImage = productItem.images?.[0];
+                const productDescription =
+                  productItem.shortDescription || productItem.description;
+                const stockLabel = productItem.inStock
+                  ? "In Stock"
+                  : productItem.leadTime || "On Order";
+                const firstSpecEntry = productItem.specifications
+                  ? Object.entries(productItem.specifications).find(
+                      ([, specValue]) =>
+                        specValue !== null &&
+                        specValue !== undefined &&
+                        String(specValue).trim() !== "",
+                    )
+                  : undefined;
 
-                    <div className="absolute top-3 left-3">
-                      <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold bg-teal-700 text-white shadow-2xs">
-                        {productItem.category?.name || "Equipment"}
-                      </span>
+                return (
+                  <div
+                    key={productItem.id}
+                    className="group bg-white rounded-3xl border border-stone-200/90 shadow-2xs hover:shadow-md transition-all overflow-hidden flex flex-col justify-between"
+                  >
+                    {/* Visual Header */}
+                    <div className="relative h-56 bg-white overflow-hidden border-b border-stone-100 flex items-center justify-center">
+                      {thumbnailImage ? (
+                        <img
+                          src={thumbnailImage}
+                          alt={productItem.name}
+                          className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <Package className="w-12 h-12 text-stone-300" />
+                      )}
+
+                      <div className="absolute top-3 right-3 z-10">
+                        <span
+                          title={stockLabel}
+                          aria-label={stockLabel}
+                          className={`block w-3 h-3 rounded-full ring-2 ring-white shadow-sm ${
+                            productItem.inStock
+                              ? "bg-emerald-500"
+                              : "bg-amber-500"
+                          }`}
+                        />
+                      </div>
                     </div>
 
-                    <div className="absolute top-3 right-3">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold shadow-2xs ${
-                          productItem.inStock
-                            ? "bg-emerald-600 text-white"
-                            : "bg-amber-600 text-white"
-                        }`}
-                      >
-                        {productItem.inStock ? "IN STOCK" : productItem.leadTime || "LEAD TIME"}
-                      </span>
-                    </div>
+                    {/* Body Content */}
+                    <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                      <div>
+                        {productItem.specialty?.name && (
+                          <div className="flex items-center justify-between text-[11px] font-mono text-stone-500 mb-1">
+                            <span>{productItem.specialty.name}</span>
+                          </div>
+                        )}
 
-                    <div className="absolute bottom-2 left-3 px-2 py-0.5 rounded bg-black/70 backdrop-blur-xs text-[10px] font-mono text-[#D4AF37]">
-                      SKU: {productItem.sku || "ELP-MED"}
-                    </div>
-                  </div>
+                        <Link
+                          to={`/products/${productItem.slug}`}
+                          className="block font-bold text-base text-stone-900 group-hover:text-teal-700 transition-colors line-clamp-1"
+                        >
+                          {productItem.name}
+                        </Link>
 
-                  {/* Body Content */}
-                  <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between text-[11px] font-mono text-stone-500">
-                        <span>{productItem.specialty?.name || "Clinical Surgery"}</span>
-                        <span className="text-stone-400">
-                          {productItem.brand || "Elpima Certified"}
-                        </span>
+                        {productDescription && (
+                          <p className="text-xs text-stone-600 line-clamp-2 mt-2 leading-relaxed">
+                            {productDescription}
+                          </p>
+                        )}
+
+                        {/* Compliance Badges from DB */}
+                        {productItem.compliance &&
+                          productItem.compliance.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-1.5 mt-3">
+                              {productItem.compliance.map((badge, index) => (
+                                <span
+                                  key={badge}
+                                  className={
+                                    index % 2 === 0
+                                      ? "inline-flex items-center gap-1 text-[10px] font-medium bg-[#FAF6EE] text-[#8E702D] px-2 py-0.5 rounded border border-[#D4AF37]/30"
+                                      : "inline-flex items-center gap-1 text-[10px] font-medium bg-[#FFF2F0] text-teal-800 px-2 py-0.5 rounded border border-teal-200"
+                                  }
+                                >
+                                  {index === 0 && (
+                                    <CheckCircle2 className="w-3 h-3 text-[#D4AF37]" />
+                                  )}
+                                  {badge}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                       </div>
 
-                      <Link
-                        to={`/products/${productItem.slug}`}
-                        className="block mt-1 font-bold text-base text-stone-900 group-hover:text-teal-700 transition-colors line-clamp-1"
-                      >
-                        {productItem.name}
-                      </Link>
+                      {/* Technical Specification Micro-Pill from DB */}
+                      {firstSpecEntry && (
+                        <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200/70 text-[11px] font-mono flex items-center justify-between gap-2">
+                          <span className="text-stone-500 truncate">
+                            {firstSpecEntry[0]}:
+                          </span>
+                          <span className="text-teal-700 font-bold truncate">
+                            {String(firstSpecEntry[1])}
+                          </span>
+                        </div>
+                      )}
 
-                      <p className="text-xs text-stone-600 line-clamp-2 mt-2 leading-relaxed">
-                        {productItem.shortDescription ||
-                          productItem.description ||
-                          "Hospital-ready surgical device with CE conformity, manufacturer warranty, and local biomedical engineer calibration."}
-                      </p>
-                    </div>
+                      {/* Actions */}
+                      <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleAddProductToQuote(productItem)}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold font-mono shadow-2xs transition-colors cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>ADD TO RFQ BAG</span>
+                        </button>
 
-                    {/* Technical Micro-Pills */}
-                    <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200/70 text-[11px] font-mono flex items-center justify-between">
-                      <span className="text-stone-500">Sterilization:</span>
-                      <span className="text-teal-700 font-bold">134°C Autoclavable</span>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleAddProductToQuote(productItem)}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold font-mono shadow-2xs transition-colors cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>ADD TO RFQ BAG</span>
-                      </button>
-
-                      <Link
-                        to={`/products/${productItem.slug}`}
-                        className="p-2.5 rounded-xl border border-stone-200 text-stone-700 hover:bg-[#FAF6EE] hover:text-[#8E702D] hover:border-[#D4AF37]/50 transition-colors"
-                        title="View Full Clinical Specifications"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </Link>
+                        <Link
+                          to={`/products/${productItem.slug}`}
+                          className="p-2.5 rounded-xl border border-stone-200 text-stone-700 hover:bg-[#FAF6EE] hover:text-[#8E702D] hover:border-[#D4AF37]/50 transition-colors"
+                          title="View Full Clinical Specifications"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Link>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             /* Table Procurement Scan View */
@@ -471,7 +506,7 @@ export const CatalogPage: React.FC = () => {
                         className="hover:bg-teal-50/20 transition-colors"
                       >
                         <td className="py-3.5 px-5 font-mono text-[11px] font-bold text-[#8E702D]">
-                          {productItem.sku || "ELP-MED"}
+                          {productItem.sku || "—"}
                         </td>
                         <td className="py-3.5 px-4 font-bold text-stone-900">
                           <Link
@@ -482,10 +517,10 @@ export const CatalogPage: React.FC = () => {
                           </Link>
                         </td>
                         <td className="py-3.5 px-4 text-stone-600">
-                          {productItem.category?.name || "Equipment"}
+                          {productItem.category?.name || "—"}
                         </td>
                         <td className="py-3.5 px-4 text-stone-600">
-                          {productItem.specialty?.name || "Surgery"}
+                          {productItem.specialty?.name || "—"}
                         </td>
                         <td className="py-3.5 px-4">
                           <span
@@ -495,7 +530,9 @@ export const CatalogPage: React.FC = () => {
                                 : "bg-amber-50 text-amber-800"
                             }`}
                           >
-                            {productItem.inStock ? "In Stock" : "Lead Time"}
+                            {productItem.inStock
+                              ? "In Stock"
+                              : productItem.leadTime || "On Order"}
                           </span>
                         </td>
                         <td className="py-3.5 px-5 text-right">

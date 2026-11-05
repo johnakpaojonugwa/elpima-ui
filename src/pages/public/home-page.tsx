@@ -24,7 +24,7 @@ export const HomePage: React.FC = () => {
   // Fetch live products from backend API
   const { data: productsData, isLoading: isProductsLoading } = useProductsQuery({
     page: 1,
-    limit: 6,
+    limit: 8,
   });
 
   const liveProducts: Product[] = productsData?.items ?? [];
@@ -413,83 +413,84 @@ export const HomePage: React.FC = () => {
 
           {/* Live Products Grid */}
           {!isProductsLoading && liveProducts.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {liveProducts.map((productItem) => {
-                const categoryName =
-                  typeof productItem.category === "object"
-                    ? productItem.category?.name
-                    : "Clinical Equipment";
-
-                const thumbnailImage =
-                  productItem.images?.[0] ||
-                  "https://images.unsplash.com/photo-1579684385127-1ef15d508118?q=80&w=800&auto=format&fit=crop";
+                const thumbnailImage = productItem.images?.[0];
+                const productDescription =
+                  productItem.shortDescription || productItem.description;
+                const stockLabel = productItem.inStock
+                  ? "In Stock"
+                  : productItem.leadTime || "On Order";
 
                 return (
                   <div
                     key={productItem.id}
-                    className="bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-lg transition-shadow flex flex-col justify-between"
+                    className="group bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-lg transition-shadow flex flex-col justify-between"
                   >
                     <div>
                       {/* Product Thumbnail */}
-                      <div className="relative h-52 bg-stone-100 overflow-hidden">
-                        <img
-                          src={thumbnailImage}
-                          alt={productItem.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <div className="absolute top-3 left-3">
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/90 text-teal-800 shadow-sm border border-stone-200">
-                            {categoryName}
-                          </span>
-                        </div>
-                        <div className="absolute top-3 right-3">
+                      <div className="relative h-56 bg-white border-b border-stone-100 flex items-center justify-center overflow-hidden">
+                        {thumbnailImage ? (
+                          <img
+                            src={thumbnailImage}
+                            alt={productItem.name}
+                            className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <Package className="w-12 h-12 text-stone-300" />
+                        )}
+                        <div className="absolute top-3 right-3 z-10">
                           <span
-                            className={`px-2.5 py-1 rounded-full text-[11px] font-medium shadow-sm ${
+                            title={stockLabel}
+                            aria-label={stockLabel}
+                            className={`block w-3 h-3 rounded-full ring-2 ring-white shadow-sm ${
                               productItem.inStock
-                                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                                : "bg-amber-50 text-amber-800 border border-amber-200"
+                                ? "bg-emerald-500"
+                                : "bg-amber-500"
                             }`}
-                          >
-                            {productItem.inStock ? "In Stock" : "On Order"}
-                          </span>
+                          />
                         </div>
                       </div>
 
                       {/* Product Info */}
                       <div className="p-5">
-                        {productItem.sku && (
-                          <span className="text-[11px] font-mono text-stone-500 uppercase block mb-1">
-                            SKU: {productItem.sku}
-                          </span>
-                        )}
                         <h4 className="font-bold text-base text-stone-900 line-clamp-1 mb-2">
                           {productItem.name}
                         </h4>
-                        <p className="text-xs text-stone-600 font-light line-clamp-2 leading-relaxed mb-4">
-                          {productItem.shortDescription ||
-                            productItem.description ||
-                            "Hospital-grade surgical apparatus meeting international safety and clinical efficacy standards."}
-                        </p>
+                        {productDescription && (
+                          <p className="text-xs text-stone-600 font-light line-clamp-2 leading-relaxed mb-4">
+                            {productDescription}
+                          </p>
+                        )}
 
-                        {/* Compliance Badges */}
-                        <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-[#FAF6EE] text-[#8E702D] px-2 py-0.5 rounded border border-[#D4AF37]/30">
-                            <CheckCircle2 className="w-3 h-3 text-[#D4AF37]" />
-                            CE Certified
-                          </span>
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-[#FFF2F0] text-teal-800 px-2 py-0.5 rounded border border-teal-200">
-                            ISO 13485
-                          </span>
-                        </div>
+                        {/* Compliance Badges from DB */}
+                        {productItem.compliance &&
+                          productItem.compliance.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                              {productItem.compliance.map((badge, index) => (
+                                <span
+                                  key={badge}
+                                  className={
+                                    index % 2 === 0
+                                      ? "inline-flex items-center gap-1 text-[10px] font-medium bg-[#FAF6EE] text-[#8E702D] px-2 py-0.5 rounded border border-[#D4AF37]/30"
+                                      : "inline-flex items-center gap-1 text-[10px] font-medium bg-[#FFF2F0] text-teal-800 px-2 py-0.5 rounded border border-teal-200"
+                                  }
+                                >
+                                  {index === 0 && (
+                                    <CheckCircle2 className="w-3 h-3 text-[#D4AF37]" />
+                                  )}
+                                  {badge}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                       </div>
                     </div>
 
                     {/* Card Actions */}
                     <div className="p-5 pt-0 border-t border-stone-100 flex items-center justify-between gap-3 mt-2">
                       <Link
-                        to={`${ROUTES.PUBLIC.CATALOG}?search=${encodeURIComponent(
-                          productItem.name,
-                        )}`}
+                        to={`/products/${productItem.slug}`}
                         className="text-xs font-medium text-stone-700 hover:text-teal-700 transition-colors"
                       >
                         Inspect Details
