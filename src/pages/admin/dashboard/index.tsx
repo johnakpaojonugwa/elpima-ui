@@ -40,7 +40,6 @@ import { formatLiveDate } from "@/utils/date";
 import {
   CONTROL_ADMIN_QUOTE_VOLUME,
   CONTROL_ADMIN_RECENT_ACTIVITIES,
-  CONTROL_ADMIN_STATS,
   CONTROL_ADMIN_STOCK_BY_CATEGORY,
 } from "./constants";
 import type {
@@ -64,26 +63,34 @@ export function ControlAdminDashboardPage() {
 
   const [selectedRole, setSelectedRole] =
     useState<ControlAdminRole>("Catalog Ops");
-  const { data: liveAnalytics } = useDashboardAnalyticsQuery();
+  const { data: liveAnalytics, isLoading: isAnalyticsLoading } =
+    useDashboardAnalyticsQuery();
   const { data: liveCategories = [] } = useCategoriesQuery();
 
   const stats: ControlAdminStatCard[] = useMemo(() => {
-    if (!liveAnalytics) return CONTROL_ADMIN_STATS;
+    if (!liveAnalytics) return [];
+    const totalProducts = liveAnalytics.catalog.totalProducts;
+    const inStockProducts = liveAnalytics.catalog.inStockProducts;
+    const inStockPct =
+      totalProducts > 0
+        ? `${Math.round((inStockProducts / totalProducts) * 100)}%`
+        : "0%";
+
     return [
       {
         id: "active-products",
         label: "Active Catalog SKUs",
-        value: String(liveAnalytics.catalog.totalProducts),
-        change: "9.4%",
-        direction: "up",
-        comparisonText: `${liveAnalytics.catalog.inStockProducts} in stock`,
+        value: String(totalProducts),
+        change: inStockPct,
+        direction: inStockProducts > 0 ? "up" : "down",
+        comparisonText: `${inStockProducts} in stock`,
         icon: Package,
       },
       {
         id: "open-quotes",
-        label: "Pending Quote Inquiries",
+        label: "Quote Inquiries",
         value: String(liveAnalytics.quotes.total),
-        change: "14.2%",
+        change: String(liveAnalytics.quotes.byStatus?.NEW ?? 0),
         direction: "up",
         comparisonText: `${liveAnalytics.quotes.urgentPending} urgent inquiries`,
         icon: FileSpreadsheet,
@@ -92,7 +99,7 @@ export function ControlAdminDashboardPage() {
         id: "categories-count",
         label: "Active Categories",
         value: String(liveAnalytics.catalog.totalCategories),
-        change: "2.1%",
+        change: String(liveAnalytics.catalog.totalSpecialties),
         direction: "up",
         comparisonText: `Across ${liveAnalytics.catalog.totalSpecialties} specialties`,
         icon: FolderTree,
@@ -101,9 +108,9 @@ export function ControlAdminDashboardPage() {
         id: "media-assets",
         label: "Featured Medical SKUs",
         value: String(liveAnalytics.catalog.featuredProducts),
-        change: "6.8%",
+        change: String(liveAnalytics.catalog.outOfStockProducts ?? 0),
         direction: "up",
-        comparisonText: "Cloudinary CDN synced",
+        comparisonText: `${liveAnalytics.catalog.outOfStockProducts ?? 0} on order`,
         icon: ImageUp,
       },
     ];
@@ -269,7 +276,10 @@ export function ControlAdminDashboardPage() {
           >
             {/* 1. Stat Cards Row */}
             <ErrorBoundary label="ControlAdminStatCards">
-              <ControlAdminStatCards cards={stats} />
+              <ControlAdminStatCards
+                cards={stats}
+                isLoading={isAnalyticsLoading || !liveAnalytics}
+              />
             </ErrorBoundary>
 
             {/* 2. Recent Activities Table */}

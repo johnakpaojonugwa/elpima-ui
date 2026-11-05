@@ -25,7 +25,6 @@ import {
 } from "@/pages/modules";
 
 import {
-  MOCK_SUPER_ADMIN_STATS,
   SUPER_ADMIN_QUOTE_VOLUME_BY_PERIOD,
   CATALOG_FULFILLMENT_BY_PERIOD,
   MOCK_ADMIN_ACTIVITIES,
@@ -62,11 +61,12 @@ export function SuperAdminDashboardPage() {
   const toast = useToast();
 
   // Live API queries from elpima-api (/api/v1/analytics/dashboard & /api/v1/managers)
-  const { data: liveAnalytics } = useDashboardAnalyticsQuery();
+  const { data: liveAnalytics, isLoading: isAnalyticsLoading } =
+    useDashboardAnalyticsQuery();
   const { data: liveManagers } = useManagersQuery();
 
   const stats: SuperAdminStatCard[] = useMemo(() => {
-    if (!liveAnalytics) return MOCK_SUPER_ADMIN_STATS;
+    if (!liveAnalytics) return [];
     return [
       {
         id: "total-products",
@@ -228,7 +228,10 @@ export function SuperAdminDashboardPage() {
         <div className="space-y-6 sm:space-y-7">
           {/* 1. Stat Cards Row (4 pastel cards) */}
           <ErrorBoundary label="SuperAdminStatCards">
-            <SuperAdminStatCards cards={stats} />
+            <SuperAdminStatCards
+              cards={stats}
+              isLoading={isAnalyticsLoading || !liveAnalytics}
+            />
           </ErrorBoundary>
 
           {/* 2. Charts Row (RFQ Quote Volume & Inquiries vs Fulfilled) */}
