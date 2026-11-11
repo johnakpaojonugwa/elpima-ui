@@ -6,12 +6,9 @@ import {
   ArrowUpDown,
   Check,
   Clock,
-  Download,
-  ExternalLink,
   Eye,
   FileSpreadsheet,
   Filter,
-  MessageSquare,
   Plus,
   RefreshCw,
   Search,
@@ -21,18 +18,18 @@ import {
   X,
 } from "lucide-react";
 import {
-  useAssignQuoteMutation,
-  useCreateQuoteMutation,
   useDeleteQuoteMutation,
-  useDownloadQuotePdfMutation,
   useManagersQuery,
   useProductsQuery,
   useQuoteOverviewStatsQuery,
   useQuotesQuery,
-  useUpdateQuoteStatusMutation,
 } from "@/hooks/queries";
 import { useAuthStore } from "@/store";
 import { FloatingSelect, Pagination } from "@/components/app";
+import {
+  CreateWalkInQuoteModal,
+  QuoteDetailWorkflowModal,
+} from "./quotes";
 import type {
   QuoteInquiry,
   QuotePriority,
@@ -88,30 +85,11 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
   const { data: productsRes } = useProductsQuery({ limit: 50 });
 
   // Mutations
-  const updateStatus = useUpdateQuoteStatusMutation();
-  const assignQuote = useAssignQuoteMutation();
   const deleteQuote = useDeleteQuoteMutation();
-  const downloadPdf = useDownloadQuotePdfMutation();
-  const createQuote = useCreateQuoteMutation();
 
   // Active modals
   const [selectedQuote, setSelectedQuote] = useState<QuoteInquiry | null>(null);
-  const [statusInput, setStatusInput] = useState<QuoteStatus>("CONTACTED");
-  const [adminNotesInput, setAdminNotesInput] = useState("");
-  const [assignedManagerId, setAssignedManagerId] = useState("");
-
-  // Create Walk-in / Manual RFQ Modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("+234");
-  const [customerEmail, setCustomerEmail] = useState("");
-  const [hospitalClinic, setHospitalClinic] = useState("");
-  const [location, setLocation] = useState("Lagos, Nigeria");
-  const [priority, setPriority] = useState<QuotePriority>("STANDARD");
-  const [customerNotes, setCustomerNotes] = useState("");
-  const [selectedProductId, setSelectedProductId] = useState("");
-  const [selectedQty, setSelectedQty] = useState(1);
-  const [createError, setCreateError] = useState("");
 
   const rawQuotes = quotesRes?.items ?? [];
   const meta = quotesRes?.pagination;
@@ -149,68 +127,6 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
 
   const openQuoteModal = (quote: QuoteInquiry) => {
     setSelectedQuote(quote);
-    setStatusInput(quote.status);
-    setAdminNotesInput(quote.adminNotes ?? "");
-    setAssignedManagerId(quote.assignedToId ?? quote.assignedTo?.id ?? "");
-  };
-
-  const handleSaveStatusAndNotes = async (submitEvent: React.FormEvent) => {
-    submitEvent.preventDefault();
-    if (!selectedQuote) return;
-    try {
-      const updated = await updateStatus.mutateAsync({
-        id: selectedQuote.id,
-        payload: {
-          status: statusInput,
-          adminNotes: adminNotesInput.trim() || undefined,
-        },
-      });
-      setSelectedQuote((previousQuote) =>
-        previousQuote
-          ? {
-              ...previousQuote,
-              status: updated?.status ?? statusInput,
-              adminNotes: updated?.adminNotes ?? adminNotesInput,
-            }
-          : null,
-      );
-      onToast?.(
-        `Quote ${selectedQuote.reference} updated to ${statusInput}`,
-      );
-    } catch (mutationError: any) {
-      onToast?.(
-        mutationError?.normalizedMessage || "Failed to update quote status",
-      );
-    }
-  };
-
-  const handleAssignManager = async () => {
-    if (!selectedQuote || !assignedManagerId) return;
-    try {
-      await assignQuote.mutateAsync({
-        id: selectedQuote.id,
-        payload: { assignedToId: assignedManagerId },
-      });
-      const managerObj = managers.find(
-        (managerItem) => managerItem.id === assignedManagerId,
-      );
-      setSelectedQuote((previousQuote) =>
-        previousQuote
-          ? {
-              ...previousQuote,
-              assignedToId: assignedManagerId,
-              assignedTo: managerObj
-                ? { id: managerObj.id, fullName: managerObj.fullName }
-                : previousQuote.assignedTo,
-            }
-          : null,
-      );
-      onToast?.(`Assigned quote ${selectedQuote.reference} to manager`);
-    } catch (mutationError: any) {
-      onToast?.(
-        mutationError?.normalizedMessage || "Failed to assign manager",
-      );
-    }
   };
 
   const handleDeleteQuote = async (quote: QuoteInquiry) => {
@@ -223,61 +139,6 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
     } catch (mutationError: any) {
       onToast?.(mutationError?.normalizedMessage || "Failed to delete quote");
     }
-  };
-
-  const handleCreateWalkInQuote = async (submitEvent: React.FormEvent) => {
-    submitEvent.preventDefault();
-    setCreateError("");
-    const targetProductId = selectedProductId || availableProducts[0]?.id;
-    if (!targetProductId) {
-      setCreateError("Please select a surgical product for the quote.");
-      return;
-    }
-    if (!customerName.trim() || !customerPhone.trim()) {
-      setCreateError("Customer name and WhatsApp phone number are required.");
-      return;
-    }
-
-    try {
-      const quoteResponse = await createQuote.mutateAsync({
-        payload: {
-          customerName: customerName.trim(),
-          customerPhone: customerPhone.trim(),
-          customerEmail: customerEmail.trim() || undefined,
-          hospitalClinic: hospitalClinic.trim() || undefined,
-          location: location.trim() || undefined,
-          priority,
-          customerNotes: customerNotes.trim() || undefined,
-          items: [
-            {
-              productId: targetProductId,
-              quantity: Number(selectedQty) || 1,
-            },
-          ],
-        },
-      });
-      setIsCreateOpen(false);
-      setCustomerName("");
-      setCustomerEmail("");
-      setHospitalClinic("");
-      setCustomerNotes("");
-      onToast?.(`Created RFQ ${quoteResponse.reference}`);
-    } catch (mutationError: any) {
-      setCreateError(
-        mutationError?.normalizedMessage ||
-          mutationError?.response?.data?.message ||
-          "Failed to create quote request.",
-      );
-    }
-  };
-
-  const buildWhatsAppUrl = (quote: QuoteInquiry) => {
-    if (quote.whatsappLink) return quote.whatsappLink;
-    const cleanPhone = quote.customerPhone.replace(/\D/g, "");
-    const message = encodeURIComponent(
-      `Hello ${quote.customerName}, regarding your Elpima Surgicals quotation request (${quote.reference}) for ${quote.hospitalClinic || "your facility"}:`,
-    );
-    return `https://wa.me/${cleanPhone}?text=${message}`;
   };
 
   return (
@@ -694,438 +555,21 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
       </div>
 
       {/* ================= QUOTE DETAIL & WORKFLOW MODAL ================= */}
-      {selectedQuote && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-gray-200 space-y-5 text-xs">
-            <div className="flex items-start justify-between gap-4 border-b border-gray-100 pb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-sm font-extrabold text-[#2E7D5B]">
-                    {selectedQuote.reference}
-                  </span>
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                      STATUS_BADGE[selectedQuote.status]
-                    }`}
-                  >
-                    {selectedQuote.status}
-                  </span>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                      selectedQuote.priority === "URGENT"
-                        ? "bg-rose-100 text-rose-700"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {selectedQuote.priority}
-                  </span>
-                </div>
-                <h3 className="text-base font-extrabold text-gray-900 mt-1">
-                  {selectedQuote.customerName} —{" "}
-                  {selectedQuote.hospitalClinic ||
-                    selectedQuote.hospitalName ||
-                    "Direct Hospital Inquiry"}
-                </h3>
-                <p className="text-gray-500">
-                  Submitted {formatLiveDate(selectedQuote.createdAt, true)} •{" "}
-                  {selectedQuote.location || "Nigeria"}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedQuote(null)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Quick Contact Actions */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              <a
-                href={buildWhatsAppUrl(selectedQuote)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs"
-              >
-                <MessageSquare className="w-4 h-4" />
-                <span>Message on WhatsApp ({selectedQuote.customerPhone})</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-
-              <button
-                type="button"
-                onClick={() => downloadPdf.mutate(selectedQuote.reference)}
-                disabled={downloadPdf.isPending}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 font-bold cursor-pointer"
-              >
-                <Download className="w-4 h-4" />
-                <span>
-                  {downloadPdf.isPending
-                    ? "Generating PDF..."
-                    : "Download Proforma PDF"}
-                </span>
-              </button>
-            </div>
-
-            {/* Requested Surgical Items */}
-            <div>
-              <h4 className="font-bold text-gray-800 uppercase mb-2">
-                Requested Surgical Equipment ({selectedQuote.items?.length ?? 0}
-                )
-              </h4>
-              <div className="border border-gray-200 rounded-xl overflow-hidden">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase text-gray-500">
-                      <th className="py-2.5 px-3">Equipment Name</th>
-                      <th className="py-2.5 px-3">SKU</th>
-                      <th className="py-2.5 px-3 text-right">Quantity</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {(selectedQuote.items ?? []).map((item) => (
-                      <tr key={item.id}>
-                        <td className="py-2.5 px-3 font-semibold text-gray-900">
-                          {item.productName ||
-                            item.product?.name ||
-                            "Surgical Equipment Item"}
-                          {item.customRequirement && (
-                            <p className="text-[11px] font-normal text-gray-500">
-                              Note: {item.customRequirement}
-                            </p>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-3 font-mono text-gray-500">
-                          {item.productSku || item.product?.sku || "—"}
-                        </td>
-                        <td className="py-2.5 px-3 text-right font-bold text-gray-900">
-                          {item.quantity}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {selectedQuote.customerNotes && (
-              <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80">
-                <p className="font-bold text-amber-900 mb-0.5">
-                  Customer / Hospital Notes:
-                </p>
-                <p className="text-amber-800">{selectedQuote.customerNotes}</p>
-              </div>
-            )}
-
-            {/* Super-Admin: Assign to Supervising Manager */}
-            {isSuperAdmin && (
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
-                <label className="block font-bold text-slate-800 uppercase">
-                  Assign to Supervising Manager (Super-Admin)
-                </label>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <FloatingSelect
-                      value={assignedManagerId}
-                      onChange={(selectedManagerId) =>
-                        setAssignedManagerId(selectedManagerId)
-                      }
-                      placeholder="Select Supervising Manager..."
-                      matchWidth
-                      className="w-full text-xs"
-                      options={[
-                        { value: "", label: "Select Supervising Manager..." },
-                        ...managers.map((managerItem) => ({
-                          value: managerItem.id,
-                          label: managerItem.fullName,
-                          description: managerItem.email,
-                        })),
-                      ]}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleAssignManager}
-                    disabled={!assignedManagerId || assignQuote.isPending}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-white font-bold disabled:opacity-40 cursor-pointer"
-                  >
-                    <UserCheck className="w-4 h-4" />
-                    <span>Assign</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Update Quote Status & Internal Notes */}
-            <form
-              onSubmit={handleSaveStatusAndNotes}
-              className="space-y-3 pt-2 border-t border-gray-100"
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">
-                    WORKFLOW STATUS
-                  </label>
-                  <FloatingSelect
-                    value={statusInput}
-                    onChange={(selectedStatus) =>
-                      setStatusInput(selectedStatus as QuoteStatus)
-                    }
-                    matchWidth
-                    className="w-full text-xs"
-                    options={[
-                      { value: "NEW", label: "NEW" },
-                      { value: "CONTACTED", label: "CONTACTED" },
-                      { value: "QUOTED", label: "QUOTED" },
-                      { value: "FULFILLED", label: "FULFILLED" },
-                      { value: "CANCELLED", label: "CANCELLED" },
-                    ]}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-gray-700 mb-1">
-                  INTERNAL ADMIN / PROCUREMENT NOTES
-                </label>
-                <textarea
-                  rows={3}
-                  value={adminNotesInput}
-                  onChange={(changeEvent) =>
-                    setAdminNotesInput(changeEvent.target.value)
-                  }
-                  placeholder="Record agreed pricing, proforma invoice number, or delivery schedule..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setSelectedQuote(null)}
-                  className="px-4 py-2 rounded-xl border border-gray-200 font-semibold text-gray-700"
-                >
-                  Close
-                </button>
-                <button
-                  type="submit"
-                  disabled={updateStatus.isPending}
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#2E7D5B] hover:bg-[#256649] text-white font-bold cursor-pointer"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>
-                    {updateStatus.isPending
-                      ? "Saving..."
-                      : "Save Status & Notes"}
-                  </span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <QuoteDetailWorkflowModal
+        quote={selectedQuote}
+        isSuperAdmin={isSuperAdmin}
+        managers={managers}
+        onClose={() => setSelectedQuote(null)}
+        onToast={onToast}
+      />
 
       {/* ================= CREATE MANUAL / WALK-IN RFQ MODAL ================= */}
-      {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-200 text-xs">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-              <h3 className="text-base font-extrabold text-gray-900">
-                Log Hospital / Walk-In Quote Request
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsCreateOpen(false)}
-                className="p-1 text-gray-400 hover:text-gray-700"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={handleCreateWalkInQuote}
-              className="space-y-3.5 pt-4"
-            >
-              {createError && (
-                <div className="p-3 rounded-xl bg-rose-50 text-rose-700 border border-rose-200">
-                  {createError}
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">
-                    CONTACT PERSON / DOCTOR *
-                  </label>
-                  <input
-                    type="text"
-                    value={customerName}
-                    onChange={(changeEvent) =>
-                      setCustomerName(changeEvent.target.value)
-                    }
-                    placeholder="Dr. Tunde Bakare"
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">
-                    WHATSAPP PHONE *
-                  </label>
-                  <input
-                    type="text"
-                    value={customerPhone}
-                    onChange={(changeEvent) =>
-                      setCustomerPhone(changeEvent.target.value)
-                    }
-                    placeholder="+2348030000000"
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">
-                    HOSPITAL / CLINIC NAME
-                  </label>
-                  <input
-                    type="text"
-                    value={hospitalClinic}
-                    onChange={(changeEvent) =>
-                      setHospitalClinic(changeEvent.target.value)
-                    }
-                    placeholder="Reddington Multi-Specialist Hospital"
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">
-                    CITY / STATE
-                  </label>
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(changeEvent) =>
-                      setLocation(changeEvent.target.value)
-                    }
-                    placeholder="Victoria Island, Lagos"
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">
-                    EMAIL ADDRESS
-                  </label>
-                  <input
-                    type="email"
-                    value={customerEmail}
-                    onChange={(changeEvent) =>
-                      setCustomerEmail(changeEvent.target.value)
-                    }
-                    placeholder="procurement@hospital.com"
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">
-                    PRIORITY
-                  </label>
-                  <FloatingSelect
-                    value={priority}
-                    onChange={(selectedPriority) =>
-                      setPriority(selectedPriority as QuotePriority)
-                    }
-                    matchWidth
-                    className="w-full text-xs"
-                    options={[
-                      { value: "STANDARD", label: "STANDARD" },
-                      { value: "URGENT", label: "URGENT" },
-                    ]}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2">
-                  <label className="block font-bold text-gray-700 mb-1">
-                    PRIMARY EQUIPMENT SKU *
-                  </label>
-                  <FloatingSelect
-                    value={selectedProductId}
-                    onChange={(productId) => setSelectedProductId(productId)}
-                    placeholder="Select surgical product..."
-                    matchWidth
-                    className="w-full text-xs"
-                    options={availableProducts.map((productItem) => ({
-                      value: productItem.id,
-                      label: productItem.name,
-                      description: productItem.sku
-                        ? `SKU: ${productItem.sku}`
-                        : undefined,
-                    }))}
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">
-                    QUANTITY *
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={selectedQty}
-                    onChange={(changeEvent) =>
-                      setSelectedQty(Number(changeEvent.target.value) || 1)
-                    }
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-gray-700 mb-1">
-                  CUSTOMER REQUIREMENTS / NOTES
-                </label>
-                <textarea
-                  rows={2}
-                  value={customerNotes}
-                  onChange={(changeEvent) =>
-                    setCustomerNotes(changeEvent.target.value)
-                  }
-                  placeholder="Include installation & theater nurse training..."
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-gray-200 font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={createQuote.isPending}
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#2E7D5B] text-white font-bold cursor-pointer"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>
-                    {createQuote.isPending ? "Submitting..." : "Create RFQ"}
-                  </span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <CreateWalkInQuoteModal
+        isOpen={isCreateOpen}
+        availableProducts={availableProducts}
+        onClose={() => setIsCreateOpen(false)}
+        onToast={onToast}
+      />
     </div>
   );
 };
