@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient, API_BASE_URL } from "@/lib/api-client";
 import { useAuthStore } from "@/store";
 import { toast } from "@/hooks/use-toast";
-import type { NotificationItem } from "@/pages/super-admin/components/super-admin-notifications-modal";
+import type { NotificationItem } from "@/pages/admin-shared";
 
 function normalizeDay(
   day?: string,

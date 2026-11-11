@@ -7,7 +7,6 @@ import type {
   QuoteTrendDataPoint,
   CatalogFulfillmentDataPoint,
   AdminActivityItem,
-  RecentQuoteItem,
   SupervisingManagerRowItem,
 } from "./types";
 

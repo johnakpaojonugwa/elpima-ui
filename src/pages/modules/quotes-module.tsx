@@ -6,19 +6,21 @@ import {
   ArrowUpDown,
   Check,
   Clock,
+  Download,
   Eye,
   FileSpreadsheet,
   Filter,
+  MessageSquare,
   Plus,
   RefreshCw,
   Search,
   SlidersHorizontal,
   Trash2,
-  UserCheck,
   X,
 } from "lucide-react";
 import {
   useDeleteQuoteMutation,
+  useDownloadQuotePdfMutation,
   useManagersQuery,
   useProductsQuery,
   useQuoteOverviewStatsQuery,
@@ -32,7 +34,6 @@ import {
 } from "./quotes";
 import type {
   QuoteInquiry,
-  QuotePriority,
   QuoteStatus,
 } from "@/types/domain";
 import { formatLiveDate } from "@/utils/date";
@@ -86,6 +87,7 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
 
   // Mutations
   const deleteQuote = useDeleteQuoteMutation();
+  const downloadPdf = useDownloadQuotePdfMutation();
 
   // Active modals
   const [selectedQuote, setSelectedQuote] = useState<QuoteInquiry | null>(null);
@@ -190,10 +192,7 @@ export const QuotesModule: React.FC<QuotesModuleProps> = ({ onToast }) => {
 
             <button
               type="button"
-              onClick={() => {
-                setSelectedProductId(availableProducts[0]?.id ?? "");
-                setIsCreateOpen(true);
-              }}
+              onClick={() => setIsCreateOpen(true)}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2E7D5B] hover:bg-[#256649] text-xs font-bold text-white shadow-xs cursor-pointer"
             >
               <Plus className="w-4 h-4" />

@@ -14,7 +14,7 @@ import {
   useDownloadQuotePdfMutation,
   useUpdateQuoteStatusMutation,
 } from "@/hooks/queries";
-import type { ManagerUser, QuoteInquiry, QuoteStatus } from "@/types/domain";
+import type { Manager, QuoteInquiry, QuoteStatus } from "@/types/domain";
 import { formatLiveDate } from "@/utils/date";
 
 const STATUS_BADGE: Record<QuoteStatus, string> = {
@@ -28,7 +28,7 @@ const STATUS_BADGE: Record<QuoteStatus, string> = {
 export interface QuoteDetailWorkflowModalProps {
   quote: QuoteInquiry | null;
   isSuperAdmin: boolean;
-  managers: ManagerUser[];
+  managers: Manager[];
   onClose: () => void;
   onToast?: (message: string) => void;
 }
@@ -68,7 +68,7 @@ export const QuoteDetailWorkflowModal: React.FC<
     try {
       await assignQuote.mutateAsync({
         id: quote.id,
-        managerId: assignedManagerId,
+        payload: { assignedToId: assignedManagerId },
       });
       onToast?.("Quote inquiry successfully assigned to manager");
     } catch (err: any) {

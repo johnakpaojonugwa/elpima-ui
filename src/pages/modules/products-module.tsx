@@ -10,18 +10,15 @@ import {
   Eye,
   Filter,
   FolderTree,
-  ImagePlus,
   Package,
   Plus,
   RefreshCw,
   Search,
   SlidersHorizontal,
-  Sparkles,
   Star,
   Stethoscope,
   TrendingUp,
   Trash2,
-  Wand2,
   X,
 } from "lucide-react";
 import {
