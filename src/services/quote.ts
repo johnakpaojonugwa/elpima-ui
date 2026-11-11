@@ -1,5 +1,5 @@
-import { API_BASE_URL, apiClient } from "@/libs/api-client";
-import { fetchList, fetchOne } from "@/libs/api-helpers";
+import { API_BASE_URL, apiClient } from "@/lib/api-client";
+import { fetchList, fetchOne } from "@/lib/api-helpers";
 import type { Page } from "@/types/api";
 import type {
   AssignQuotePayload,

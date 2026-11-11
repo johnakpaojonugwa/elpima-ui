@@ -1,4 +1,4 @@
-export { apiClient, API_BASE_URL } from "@/libs/api-client";
+export { apiClient, API_BASE_URL } from "@/lib/api-client";
 export * from "./analytics";
 export * from "./audit";
 export * from "./auth";

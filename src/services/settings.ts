@@ -1,5 +1,5 @@
-import { apiClient } from "@/libs/api-client";
-import { fetchOne } from "@/libs/api-helpers";
+import { apiClient } from "@/lib/api-client";
+import { fetchOne } from "@/lib/api-helpers";
 import type { StoreSetting, UpdateStoreSettingPayload } from "@/types/domain";
 
 export const settingsService = {

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button, TextBox } from "@/components/app";
-import { authService } from "@/services/auth";
+import { useForgotPasswordMutation } from "@/hooks/queries";
 
 interface ForgotPasswordProps {
   onBack: () => void;
@@ -14,7 +14,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({
 }) => {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const forgotPasswordMutation = useForgotPasswordMutation();
 
   const handleSendCode = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -24,9 +24,8 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({
     }
 
     setError("");
-    setIsSubmitting(true);
     try {
-      await authService.forgotPassword({ email: email.trim() });
+      await forgotPasswordMutation.mutateAsync({ email: email.trim() });
       onCodeSent(email.trim());
     } catch (requestError: any) {
       setError(
@@ -36,8 +35,6 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({
           requestError?.message ||
           "Unable to send a password reset token.",
       );
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -74,7 +71,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({
       <Button
         type="submit"
         variant="primary"
-        isLoading={isSubmitting}
+        isLoading={forgotPasswordMutation.isPending}
         className="w-full"
       >
         Send Reset Token

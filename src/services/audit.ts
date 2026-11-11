@@ -1,4 +1,4 @@
-import { fetchList, fetchOne } from "@/libs/api-helpers";
+import { fetchList, fetchOne } from "@/lib/api-helpers";
 import type { Page } from "@/types/api";
 import type { AuditLog, AuditLogListQuery } from "@/types/domain";
 

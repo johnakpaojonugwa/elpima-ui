@@ -135,6 +135,44 @@ const SuperAdminDashboardPage = lazyWithPreload(
   () => import("@/pages/super-admin/dashboard-page"),
 );
 
+const AdminOverview = lazyWithPreload(
+  () => import("@/pages/admin/views/admin-overview"),
+);
+const SuperAdminOverview = lazyWithPreload(
+  () => import("@/pages/super-admin/views/super-admin-overview"),
+);
+
+const ProductsModule = lazyWithPreload(() =>
+  import("@/pages/modules").then((m) => ({ default: m.ProductsModule })),
+);
+const CategoriesModule = lazyWithPreload(() =>
+  import("@/pages/modules").then((m) => ({ default: m.CategoriesModule })),
+);
+const SpecialtiesModule = lazyWithPreload(() =>
+  import("@/pages/modules").then((m) => ({ default: m.SpecialtiesModule })),
+);
+const QuotesModule = lazyWithPreload(() =>
+  import("@/pages/modules").then((m) => ({ default: m.QuotesModule })),
+);
+const ManagersModule = lazyWithPreload(() =>
+  import("@/pages/modules").then((m) => ({ default: m.ManagersModule })),
+);
+const UploadsModule = lazyWithPreload(() =>
+  import("@/pages/modules").then((m) => ({ default: m.UploadsModule })),
+);
+const AuditLogsModule = lazyWithPreload(() =>
+  import("@/pages/modules").then((m) => ({ default: m.AuditLogsModule })),
+);
+const SecurityModule = lazyWithPreload(() =>
+  import("@/pages/modules").then((m) => ({ default: m.SecurityModule })),
+);
+const SettingsModule = lazyWithPreload(() =>
+  import("@/pages/modules").then((m) => ({ default: m.SettingsModule })),
+);
+const ActivitiesModule = lazyWithPreload(() =>
+  import("@/pages/modules").then((m) => ({ default: m.ActivitiesModule })),
+);
+
 // ==========================================
 // 4. Fallback & Error Boundary Components
 // ==========================================
@@ -294,40 +332,45 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
     children: [
       {
-        index: true,
-        element: <Navigate to={ROUTES.ADMIN.DASHBOARD} replace />,
-      },
-      {
-        path: "dashboard",
         element: withSuspense(AdminDashboardPage),
-      },
-      {
-        path: "activities",
-        element: withSuspense(AdminDashboardPage),
-      },
-      {
-        path: "products",
-        element: withSuspense(AdminDashboardPage),
-      },
-      {
-        path: "categories",
-        element: withSuspense(AdminDashboardPage),
-      },
-      {
-        path: "specialties",
-        element: withSuspense(AdminDashboardPage),
-      },
-      {
-        path: "quotes",
-        element: withSuspense(AdminDashboardPage),
-      },
-      {
-        path: "uploads",
-        element: withSuspense(AdminDashboardPage),
-      },
-      {
-        path: "security",
-        element: withSuspense(AdminDashboardPage),
+        children: [
+          {
+            index: true,
+            element: <Navigate to={ROUTES.ADMIN.DASHBOARD} replace />,
+          },
+          {
+            path: "dashboard",
+            element: withSuspense(AdminOverview),
+          },
+          {
+            path: "activities",
+            element: withSuspense(ActivitiesModule),
+          },
+          {
+            path: "products",
+            element: withSuspense(ProductsModule),
+          },
+          {
+            path: "categories",
+            element: withSuspense(CategoriesModule),
+          },
+          {
+            path: "specialties",
+            element: withSuspense(SpecialtiesModule),
+          },
+          {
+            path: "quotes",
+            element: withSuspense(QuotesModule),
+          },
+          {
+            path: "uploads",
+            element: withSuspense(UploadsModule),
+          },
+          {
+            path: "security",
+            element: withSuspense(SecurityModule),
+          },
+        ],
       },
     ],
   },
@@ -339,52 +382,57 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
     children: [
       {
-        index: true,
-        element: <Navigate to={ROUTES.SUPER_ADMIN.DASHBOARD} replace />,
-      },
-      {
-        path: "dashboard",
         element: withSuspense(SuperAdminDashboardPage),
-      },
-      {
-        path: "activities",
-        element: withSuspense(SuperAdminDashboardPage),
-      },
-      {
-        path: "products",
-        element: withSuspense(SuperAdminDashboardPage),
-      },
-      {
-        path: "categories",
-        element: withSuspense(SuperAdminDashboardPage),
-      },
-      {
-        path: "specialties",
-        element: withSuspense(SuperAdminDashboardPage),
-      },
-      {
-        path: "quotes",
-        element: withSuspense(SuperAdminDashboardPage),
-      },
-      {
-        path: "managers",
-        element: withSuspense(SuperAdminDashboardPage),
-      },
-      {
-        path: "uploads",
-        element: withSuspense(SuperAdminDashboardPage),
-      },
-      {
-        path: "audit-logs",
-        element: withSuspense(SuperAdminDashboardPage),
-      },
-      {
-        path: "security",
-        element: withSuspense(SuperAdminDashboardPage),
-      },
-      {
-        path: "settings",
-        element: withSuspense(SuperAdminDashboardPage),
+        children: [
+          {
+            index: true,
+            element: <Navigate to={ROUTES.SUPER_ADMIN.DASHBOARD} replace />,
+          },
+          {
+            path: "dashboard",
+            element: withSuspense(SuperAdminOverview),
+          },
+          {
+            path: "activities",
+            element: withSuspense(ActivitiesModule),
+          },
+          {
+            path: "products",
+            element: withSuspense(ProductsModule),
+          },
+          {
+            path: "categories",
+            element: withSuspense(CategoriesModule),
+          },
+          {
+            path: "specialties",
+            element: withSuspense(SpecialtiesModule),
+          },
+          {
+            path: "quotes",
+            element: withSuspense(QuotesModule),
+          },
+          {
+            path: "managers",
+            element: withSuspense(ManagersModule),
+          },
+          {
+            path: "uploads",
+            element: withSuspense(UploadsModule),
+          },
+          {
+            path: "audit-logs",
+            element: withSuspense(AuditLogsModule),
+          },
+          {
+            path: "security",
+            element: withSuspense(SecurityModule),
+          },
+          {
+            path: "settings",
+            element: withSuspense(SettingsModule),
+          },
+        ],
       },
     ],
   },

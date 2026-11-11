@@ -1,4 +1,4 @@
-import { fetchOne } from "@/libs/api-helpers";
+import { fetchOne } from "@/lib/api-helpers";
 import type { HealthCheckResponse } from "@/types/api";
 import type { DashboardAnalytics } from "@/types/domain";
 

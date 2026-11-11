@@ -1,5 +1,5 @@
-import { apiClient } from "@/libs/api-client";
-import { fetchOne } from "@/libs/api-helpers";
+import { apiClient } from "@/lib/api-client";
+import { fetchOne } from "@/lib/api-helpers";
 import type {
   CreateManagerPayload,
   Manager,

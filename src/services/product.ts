@@ -1,5 +1,5 @@
-import { apiClient } from "@/libs/api-client";
-import { fetchList, fetchOne } from "@/libs/api-helpers";
+import { apiClient } from "@/lib/api-client";
+import { fetchList, fetchOne } from "@/lib/api-helpers";
 import type { Page } from "@/types/api";
 import type {
   CreateProductPayload,

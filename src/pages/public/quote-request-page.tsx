@@ -4,10 +4,10 @@ import { Link } from "react-router-dom";
 import { CheckCircle2, MessageSquare, ExternalLink } from "lucide-react";
 import { useCreateQuoteMutation } from "@/hooks/queries";
 import { ROUTES } from "@/routes";
-import { useQuoteBag } from "@/store";
+import { useQuoteBagStore } from "@/store";
 
 const QuoteRequestPage: React.FC = () => {
-  const { items, removeItem, clearBag } = useQuoteBag();
+  const { items, removeItem, clearBag } = useQuoteBagStore();
   const createQuote = useCreateQuoteMutation();
 
   const [customerName, setCustomerName] = useState("");

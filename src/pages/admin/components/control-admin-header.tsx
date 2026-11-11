@@ -15,7 +15,7 @@ import { useSuperAdminProfile } from "@/hooks/use-super-admin-profile";
 import { CONTROL_ADMIN_NAV_ITEMS } from "../dashboard/constants";
 import type { ControlAdminNavItem, ControlAdminRole } from "../dashboard/types";
 import { useNotifications } from "@/hooks/use-notifications";
-import { SuperAdminNotificationsModal } from "@/pages/super-admin/components/super-admin-notifications-modal";
+import { AdminNotificationsModal } from "@/pages/admin-shared";
 
 interface ControlAdminHeaderProps {
   onToggleMobileSidebar: () => void;
@@ -306,7 +306,7 @@ export const ControlAdminHeader: React.FC<ControlAdminHeaderProps> = ({
       </AnimatePresence>
 
       {/* Notifications Modal */}
-      <SuperAdminNotificationsModal
+      <AdminNotificationsModal
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
         notifications={notifications}

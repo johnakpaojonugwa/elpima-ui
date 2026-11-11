@@ -51,18 +51,7 @@ export interface AdminActivityItem {
   status: "Success" | "Failed" | "Pending";
 }
 
-export interface RecentQuoteItem {
-  id: string;
-  no: number;
-  reference: string;
-  customerName: string;
-  hospitalClinic: string;
-  phone: string;
-  priority: "STANDARD" | "URGENT";
-  status: "NEW" | "CONTACTED" | "QUOTED" | "FULFILLED" | "CANCELLED";
-  itemsCount: number;
-  dateCreated: string;
-}
+export type { RecentQuoteItem } from "@/pages/admin-shared/types";
 
 export interface SupervisingManagerRowItem {
   id: string;

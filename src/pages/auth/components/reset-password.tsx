@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button, PasswordInput, TextBox } from "@/components/app";
-import { authService } from "@/services/auth";
+import { useResetPasswordMutation } from "@/hooks/queries";
 
 interface ResetPasswordProps {
   email: string;
@@ -17,7 +17,7 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({
   const [token, setToken] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const resetPasswordMutation = useResetPasswordMutation();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -31,9 +31,8 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({
     }
 
     setError("");
-    setIsSubmitting(true);
     try {
-      await authService.resetPassword({
+      await resetPasswordMutation.mutateAsync({
         token: token.trim(),
         newPassword: password,
       });
@@ -46,8 +45,6 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({
           requestError?.message ||
           "Unable to reset your password.",
       );
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -90,7 +87,7 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({
       <Button
         type="submit"
         variant="primary"
-        isLoading={isSubmitting}
+        isLoading={resetPasswordMutation.isPending}
         className="w-full text-base font-bold shadow-sm hover:shadow-md py-3.5"
       >
         Save New Password

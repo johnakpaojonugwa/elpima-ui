@@ -1,7 +1,7 @@
 // src/hooks/use-notifications.ts
 import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient, API_BASE_URL } from "@/libs/api-client";
+import { apiClient, API_BASE_URL } from "@/lib/api-client";
 import { useAuthStore } from "@/store";
 import { toast } from "@/hooks/use-toast";
 import type { NotificationItem } from "@/pages/super-admin/components/super-admin-notifications-modal";
